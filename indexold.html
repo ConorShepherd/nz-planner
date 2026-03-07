@@ -1595,8 +1595,7 @@ document.querySelectorAll('.filter-chip').forEach(btn=>{
 // SUPABASE SYNC
 // ═══════════════════════════════════════════════════════
 const SB_URL = 'https://szcmxrqehkrbeolxwbng.supabase.co';
-const SB_PUB = 'sb_publishable_Q9yXwZ2ax8OLhSDdEuoM8A_QkbUTDYs';
-const SB_JWT = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6Y214cnFlaGtyYmVvbHh3Ym5nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4NzU0OTQsImV4cCI6MjA4ODQ1MTQ5NH0.HV6-1VANpOwvE-GK9GlsfNIU2Fs4Ibph0kXxTSLWoCk';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6Y214cnFlaGtyYmVvbHh3Ym5nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4NzU0OTQsImV4cCI6MjA4ODQ1MTQ5NH0.HV6-1VANpOwvE-GK9GlsfNIU2Fs4Ibph0kXxTSLWoCk';
 
 const sync = {
   code: null,
@@ -1610,8 +1609,8 @@ const sync = {
 function sbHeaders() {
   return {
     'Content-Type': 'application/json',
-    'apikey': SB_PUB,
-    'Authorization': `Bearer ${SB_JWT}`,
+    'apikey': SB_KEY,
+    'Authorization': `Bearer ${SB_KEY}`,
     'Prefer': 'return=representation',
   };
 }
