@@ -1098,6 +1098,23 @@ body {
   0%,100% { opacity: 1; }
   50% { opacity: 0.3; }
 }
+.csv-pill {
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--bg3);
+  color: var(--text3);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  user-select: none;
+}
+.csv-pill:hover { border-color: var(--border2); color: var(--text2); }
 
 /* Passcode modal */
 .modal-overlay {
@@ -1273,6 +1290,8 @@ body {
       <div class="sync-dot" id="sync-dot"></div>
       <span id="sync-label">Connect &amp; Share</span>
     </div>
+    <div class="csv-pill" onclick="exportCSV()" title="Export plan to CSV">⬇ Export CSV</div>
+    <label class="csv-pill" title="Import plan from CSV">⬆ Import CSV<input type="file" accept=".csv" id="csv-import-input" style="display:none" onchange="importCSV(event)"></label>
   </div>
   <div class="trip-progress" id="trip-progress"></div>
 </div>
@@ -1319,6 +1338,20 @@ body {
 
 <!-- Sync toast -->
 <div class="sync-toast" id="sync-toast"></div>
+
+<!-- CSV Export Modal -->
+<div class="modal-overlay" id="csv-modal" onclick="if(event.target===this)closeCsvModal()">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-title">Export <em>CSV</em></div>
+    <div class="modal-sub" id="csv-modal-filename" style="margin-bottom:10px"></div>
+    <textarea id="csv-modal-text" readonly style="width:100%;height:180px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text2);font-family:var(--mono);font-size:9px;padding:10px;resize:none;outline:none;line-height:1.5"></textarea>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="modal-btn primary" style="flex:1" onclick="copyCsvToClipboard()">📋 Copy all</button>
+      <button class="modal-btn secondary" style="flex:1" onclick="closeCsvModal()">Done</button>
+    </div>
+    <div id="csv-copy-hint" style="font-family:var(--mono);font-size:9px;color:var(--accent);text-align:center;margin-top:8px;min-height:14px"></div>
+  </div>
+</div>
 
 <!-- TAB NAV -->
 <div class="tab-nav">
@@ -3304,6 +3337,190 @@ function getSerializableState() {
     customActivities: state.customActivities,
     userNotes: state.userNotes,
   };
+}
+
+// ── CSV EXPORT ──
+function exportCSV() {
+  const allActs = [...ACTIVITIES, ...state.customActivities];
+  const actMap = {};
+  allActs.forEach(a => actMap[a.id] = a);
+
+  const rows = [['Day','Date','Activity','Zone','Types','Dist_km','Gain_m','Hours','Notes','Link','DriveEve','Custom']];
+
+  DAYS.forEach(day => {
+    const acts = state.scheduled[day.id] || [];
+    if (!acts.length) {
+      rows.push([day.idx + 1, day.date.toISOString().slice(0,10), '', '', '', '', '', '', '', '', '', '']);
+    } else {
+      acts.forEach(actId => {
+        const a = actMap[actId];
+        if (!a) return;
+        const note = (state.userNotes[actId] || '').replace(/"/g, '""');
+        const driveEve = state.driveEve[day.id] ? '1' : '0';
+        rows.push([
+          day.idx + 1,
+          day.date.toISOString().slice(0,10),
+          `"${(a.name||'').replace(/"/g,'""')}"`,
+          a.zone || '',
+          (a.types||[]).join('|'),
+          a.dist || '',
+          a.gain || '',
+          a.actHrs || '',
+          `"${note}"`,
+          a.link || '',
+          driveEve,
+          a.isCustom ? '1' : '0',
+        ]);
+      });
+    }
+  });
+
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const filename = `${(tripConfig.tripName||'nz-planner').replace(/\s+/g,'-').toLowerCase()}.csv`;
+
+  // Try proper download first (works when served from a web server)
+  try {
+    const blob = new Blob([csv], {type:'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showToast('Plan exported ✓');
+  } catch(e) {
+    // Fallback: show modal with copyable CSV (for local file:// context)
+    showCSVModal(csv, filename);
+  }
+}
+
+// ── CSV IMPORT ──
+function importCSV(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const text = e.target.result;
+      const lines = text.split(/\r?\n/).filter(l => l.trim());
+      if (lines.length < 2) { showToast('CSV appears empty'); return; }
+
+      // Parse header
+      const header = parseCSVLine(lines[0]);
+      const col = {};
+      header.forEach((h,i) => col[h.trim()] = i);
+
+      const allActs = [...ACTIVITIES, ...state.customActivities];
+      const actByName = {};
+      allActs.forEach(a => actByName[a.name.toLowerCase().trim()] = a);
+
+      const newScheduled = {};
+      const newDriveEve = {};
+      const newNotes = {};
+
+      for (let i = 1; i < lines.length; i++) {
+        const row = parseCSVLine(lines[i]);
+        const dayNum = parseInt(row[col['Day']]);
+        if (!dayNum || isNaN(dayNum)) continue;
+        const dayId = `day-${dayNum - 1}`;
+        const actName = (row[col['Activity']] || '').trim();
+        if (!actName) continue;
+
+        const act = actByName[actName.toLowerCase()];
+        let actId = act ? act.id : null;
+
+        // If not found and has custom flag, create a custom activity
+        if (!actId && row[col['Custom']] === '1') {
+          actId = 'custom-import-' + Date.now() + '-' + i;
+          const newAct = {
+            id: actId,
+            name: actName,
+            zone: row[col['Zone']] || 'CHC',
+            baseZone: row[col['Zone']] || 'CHC',
+            types: (row[col['Types']] || 'hike').split('|').filter(Boolean),
+            dist: parseFloat(row[col['Dist_km']]) || 0,
+            gain: parseFloat(row[col['Gain_m']]) || 0,
+            actHrs: parseFloat(row[col['Hours']]) || 0,
+            notes: row[col['Notes']] || '',
+            link: row[col['Link']] || '',
+            isCustom: true,
+            hard: false,
+          };
+          state.customActivities.push(newAct);
+          actByName[actName.toLowerCase()] = newAct;
+        }
+
+        if (!actId) continue;
+
+        if (!newScheduled[dayId]) newScheduled[dayId] = [];
+        if (!newScheduled[dayId].includes(actId)) newScheduled[dayId].push(actId);
+
+        if (row[col['DriveEve']] === '1') newDriveEve[dayId] = true;
+        const note = row[col['Notes']] || '';
+        if (note) newNotes[actId] = note;
+      }
+
+      // Merge into state
+      Object.assign(state.scheduled, newScheduled);
+      Object.assign(state.driveEve, newDriveEve);
+      Object.assign(state.userNotes, newNotes);
+      renderAll();
+      if (typeof debouncedSave === 'function') debouncedSave();
+      showToast('Plan imported ✓');
+    } catch(err) {
+      showToast('Import failed — check CSV format');
+      console.error('CSV import error:', err);
+    }
+    // Reset input so same file can be re-imported
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+function showCSVModal(csv, filename) {
+  document.getElementById('csv-modal-filename').textContent = filename;
+  document.getElementById('csv-modal-text').value = csv;
+  document.getElementById('csv-copy-hint').textContent = '';
+  document.getElementById('csv-modal').classList.add('visible');
+}
+function closeCsvModal() {
+  document.getElementById('csv-modal').classList.remove('visible');
+}
+function copyCsvToClipboard() {
+  const ta = document.getElementById('csv-modal-text');
+  ta.select();
+  try {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(ta.value).then(() => {
+        document.getElementById('csv-copy-hint').textContent = '✓ Copied to clipboard';
+      });
+    } else {
+      document.execCommand('copy');
+      document.getElementById('csv-copy-hint').textContent = '✓ Copied to clipboard';
+    }
+  } catch(e) {
+    document.getElementById('csv-copy-hint').textContent = 'Select all text above and copy manually';
+  }
+}
+
+function parseCSVLine(line) {
+  const result = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQ && line[i+1] === '"') { cur += '"'; i++; }
+      else inQ = !inQ;
+    } else if (ch === ',' && !inQ) {
+      result.push(cur); cur = '';
+    } else {
+      cur += ch;
+    }
+  }
+  result.push(cur);
+  return result;
 }
 
 function loadRemoteState(remoteState) {
