@@ -1872,58 +1872,101 @@ function getSleepCoords(dayIdx) {
   return todayBase;
 }
 
-function getDayWaypoints(dayIdx) {
+// Returns an array of waypoint arrays -- one per driving activity.
+// Each is an independent out-and-back: [camp, activity, returnPoint].
+// Activities are modelled as independent trips because they typically radiate
+// from camp in different directions (e.g. Rob Roy and Brewster from Wanaka).
+// Chaining act1->act2 overestimates drive time by routing through trailheads
+// instead of via the campsite road network.
+//
+// driveEve: if tomorrow's transit is floated to tonight, the last activity's
+// return point becomes tomorrow's base (driver heads straight on from trailhead).
+// Returns a single waypoint array for the day: [sleepStart, act1, act2, ..., sleepEnd]
+// OSRM routes this as one continuous trip, which correctly handles co-located activities
+// (e.g. Glowworm Caves + Gertrude Saddle both near Milford — one drive there and back,
+// not two independent out-and-backs which would double-count the Queenstown→Milford leg).
+// Returns [] if no driving activities exist for the day.
+function getDayWaypointSets(dayIdx) {
   const acts = getDayActs(`day-${dayIdx}`);
-  if (!acts.length) return null;
+  if (!acts.length) return [];
 
-  // Only include activities that require driving from base (driveFromBase > 0)
   const drivingActs = acts.filter(a => (a.driveFromBase || 0) > 0 && a.coords);
-  if (!drivingActs.length) return null;
+  if (!drivingActs.length) return [];
 
   const sleepStart = getSleepCoords(dayIdx);
-  if (!sleepStart) return null;
+  if (!sleepStart) return [];
 
-  // For multiple driving activities, route base → act1 → act2 → base
-  // For a single driving activity, simple out-and-back: base → act → base
   const nextDayId = `day-${dayIdx + 1}`;
   let sleepEnd = sleepStart;
   if (state.driveEve[nextDayId]) {
     const nextActs = getDayActs(nextDayId);
-    if (nextActs.length) {
-      sleepEnd = BASE_COORDS[nextActs[0].baseZone] || sleepStart;
-    }
+    if (nextActs.length) sleepEnd = BASE_COORDS[nextActs[0].baseZone] || sleepStart;
   }
 
-  return [sleepStart, ...drivingActs.map(a => a.coords), sleepEnd];
+  // Single chain: camp → act1 → act2 → … → camp (or next zone if driveEve)
+  return [[sleepStart, ...drivingActs.map(a => a.coords), sleepEnd]];
 }
 
-// Trigger async OSRM lookup for a day and re-render when done
+// Flat waypoint list (convenience alias — same as the single set above).
+function getDayWaypoints(dayIdx) {
+  const sets = getDayWaypointSets(dayIdx);
+  return sets.length ? sets[0] : null;
+}
+
+// Per-day cache of the last known good OSRM result.
+// Kept separately from osrmCache (which is keyed by waypoints) so that when
+// activities change and the waypoint key changes, we can show the previous
+// live value while the new fetch is in flight, rather than dropping to the
+// driveFromBase fallback and showing a jarring jump.
+// Per-day last-known OSRM result. Survives waypoint-key changes so we show
+// a sane value while a fresh fetch is in flight (avoids fallback flicker).
+const osrmLastKnown = {}; // dayIdx -> hours
+
+// Trigger async OSRM lookups for a day -- one per driving activity -- and re-render.
+// Independent per-activity fetches means each result is cached and reusable across
+// different day compositions (e.g. Rob Roy alone reuses its cached result when Brewster
+// is added later -- only Brewster needs a fresh fetch).
 const osrmPending = new Set();
 async function fetchDayDrive(dayIdx) {
   const key = `day-${dayIdx}`;
   if (osrmPending.has(key)) return;
-  const waypoints = getDayWaypoints(dayIdx);
-  if (!waypoints) return;
-  const cacheKey = osrmKey(waypoints);
-  if (osrmCache[cacheKey] !== undefined) return; // already have it
+  const sets = getDayWaypointSets(dayIdx);
+  if (!sets.length) return;
+  const missing = sets.filter(wp => osrmCache[osrmKey(wp)] === undefined);
+  if (!missing.length) return;
   osrmPending.add(key);
-  await osrmRoute(waypoints);
+  await Promise.all(missing.map(wp => osrmRoute(wp)));
   osrmPending.delete(key);
-  // Re-render just the effort chips for this day without full re-render
+  // Only update lastKnown if at least one result succeeded (non-null).
+  // A full-null result (OSRM offline) must not overwrite a valid previous value.
+  const anySuccess = sets.some(wp => osrmCache[osrmKey(wp)] != null);
+  if (anySuccess) {
+    osrmLastKnown[dayIdx] = sets.reduce((s, wp) => s + (osrmCache[osrmKey(wp)] ?? 0), 0);
+  }
   renderDayEffort(dayIdx);
 }
 
-// Get live local drive hours for a day (from cache), or fall back to static max
+// Get live local drive hours for a day -- sum of per-activity OSRM round-trips.
+// Falls back to last-known while a fresh fetch is in flight, then to driveFromBase estimate.
 function getLiveDayDrive(dayIdx) {
-  const waypoints = getDayWaypoints(dayIdx);
-  if (!waypoints) return 0;
-  const cacheKey = osrmKey(waypoints);
-  if (osrmCache[cacheKey] != null) return osrmCache[cacheKey];
-  // Fallback: max driveFromBase * 2 (out and back to furthest point)
+  const sets = getDayWaypointSets(dayIdx);
+  if (!sets.length) return 0;
+  // "allCached" means every set has a non-null (successful) OSRM result
+  const allCached = sets.every(wp => osrmCache[osrmKey(wp)] != null);
+  if (allCached) {
+    const total = sets.reduce((s, wp) => s + osrmCache[osrmKey(wp)], 0);
+    osrmLastKnown[dayIdx] = total; // keep last-known fresh
+    return total;
+  }
+  // Some results pending or failed — use last-known if available
+  if (osrmLastKnown[dayIdx] != null) return osrmLastKnown[dayIdx];
+  // No OSRM data at all yet — driveFromBase estimate (sum, not max)
   const acts = getDayActs(`day-${dayIdx}`);
-  const maxDfb = Math.max(...acts.map(a => a.driveFromBase || 0));
-  return maxDfb * 2;
+  const estimate = acts.filter(a => (a.driveFromBase||0) > 0)
+                       .reduce((s, a) => s + a.driveFromBase * 2, 0);
+  return estimate;
 }
+
 
 const DRIVE = {
   'CHC':          { 'Castle Hill': 1.25, 'Mt Cook': 4.0, 'Arthurs Pass': 1.75, 'Hanmer': 1.5, 'Wanaka': 5.5, 'Glenorchy': 6.0, 'Mackenzie': 3.25, 'Peel Forest': 2.0},
@@ -2130,7 +2173,7 @@ function getPrevZone(dayIdx) {
 // True drive time to get to this day's zone from previous zone
 // Returns 0 if transit is floated to previous evening (driveEve)
 function getTransitDrive(dayIdx) {
-  // Fly day (day 19): drive from last camp to CHC
+  // Fly day: drive from last camp to CHC
   if(DAYS[dayIdx] && DAYS[dayIdx].isFly) {
     const lastZone = getPrevZone(dayIdx);
     if(!lastZone || lastZone === 'CHC') return 0;
@@ -2139,11 +2182,18 @@ function getTransitDrive(dayIdx) {
   const acts = getDayActs(`day-${dayIdx}`);
   if(!acts.length) return 0;
   if(state.driveEve[`day-${dayIdx}`]) return 0; // floated to prev evening
-  const thisZone = acts[0].baseZone;
-  const prevZone = getPrevZone(dayIdx);
-  if(prevZone===thisZone) return 0;
-  const t = getDrive(prevZone, thisZone);
-  return t ?? 0;
+
+  // Build the full zone journey for the day:
+  // prevZone → acts[0].baseZone → acts[1].baseZone → ...
+  // and sum each hop that crosses a zone boundary.
+  const zones = [getPrevZone(dayIdx), ...acts.map(a => a.baseZone)];
+  let total = 0;
+  for(let i = 0; i < zones.length - 1; i++) {
+    if(zones[i] && zones[i+1] && zones[i] !== zones[i+1]) {
+      total += getDrive(zones[i], zones[i+1]) ?? 0;
+    }
+  }
+  return total;
 }
 
 // Get transit time floated to prev evening (for rendering on prev day)
@@ -2506,7 +2556,7 @@ function renderDays(){
     if(hasActs || eveDrive > 0 || isFly){
       html+=`<div class="day-effort-row">
         ${transit>0?`<div class="effort-chip drive">🚗 ${transit.toFixed(1)}h transit</div>`:''}
-        ${getLocalDrive(i)>0?`<div class="effort-chip drive">🚗 ${getLocalDrive(i).toFixed(1)}h local${(()=>{const wp=getDayWaypoints(i);return wp&&osrmCache[osrmKey(wp)]!=null?' <span style=\"font-size:8px;opacity:0.6\">live</span>':''})()}</div>`:''}
+        ${getLocalDrive(i)>0?`<div class="effort-chip drive">🚗 ${getLocalDrive(i).toFixed(1)}h local${(()=>{const sets=getDayWaypointSets(i);return sets.length&&sets.some(wp=>osrmCache[osrmKey(wp)]!=null)?' <span style=\"font-size:8px;opacity:0.6\">live</span>':''})()}</div>`:''}
         ${actH>0?`<div class="effort-chip hike">⛰ ${actH.toFixed(1)}h activity</div>`:''}
         ${gain>0?`<div class="effort-chip hike">↑${gain}m gain</div>`:''}
         ${eveDrive>0?`<div class="effort-chip drive eve-drive">🚗 ${eveDrive.toFixed(1)}h drive to ${eveLbl} (eve)</div>`:''}
@@ -2593,8 +2643,8 @@ function renderDays(){
       const dIdx = parseInt(dayId.replace('day-',''));
       [dIdx-1, dIdx, dIdx+1].forEach(idx => {
         if(idx >= 0) {
-          const wp = getDayWaypoints(idx);
-          if(wp) delete osrmCache[osrmKey(wp)];
+          getDayWaypointSets(idx).forEach(wp => delete osrmCache[osrmKey(wp)]);
+          delete osrmLastKnown[idx]; // clear last-known so stale sleep-point result isn't reused
         }
       });
       renderAll();
