@@ -1844,6 +1844,20 @@ function getDayCampOptions(dayIdx) {
   return getZoneCampsites(zone);
 }
 
+// Returns the camp for a day based purely on that day's activity zone,
+// ignoring any driveEve adjustment to the next day's zone.
+// Used by getSleepCoords so that sleep-START coords are always in the
+// activity zone (where you woke up), not the zone you drove to that evening.
+function getDayCampActivityZone(dayIdx) {
+  const acts = getDayActs(`day-${dayIdx}`);
+  if (!acts.length) return null;
+  const zone = acts[acts.length-1].baseZone;
+  const sites = getZoneCampsites(zone);
+  if (!sites.length) return null;
+  const idx = getEffectiveCampIdx(dayIdx);
+  return sites[idx] || sites[0];
+}
+
 function getSleepCoords(dayIdx) {
   // Returns where we slept the night before dayIdx — i.e. the start point
   // for any local driving on dayIdx. This is SEPARATE from transit driving
@@ -1854,6 +1868,9 @@ function getSleepCoords(dayIdx) {
   // 2. Same zone as previous day: slept at last activity's coords (trailhead camp etc.)
   // 3. Different zone, no driveEve: arrived this morning via transit, so local driving
   //    starts from today's base camp (OSRM only covers today's local leg, not transit).
+  //
+  // NB: always uses activity-zone camp coords (getDayCampActivityZone), never the
+  // driveEve-adjusted camp, because sleep-START is where you woke up that morning.
 
   const todayActs = getDayActs(`day-${dayIdx}`);
   if (!todayActs.length) return null;
@@ -1868,16 +1885,16 @@ function getSleepCoords(dayIdx) {
     const prevActs = getDayActs(`day-${i}`);
     if (prevActs.length) {
       const prevBaseZone = prevActs[prevActs.length - 1].baseZone;
-      // Rule 2: same zone — use selected camp coords from previous day
+      // Rule 2: same zone — use activity-zone camp coords from previous day
       if (prevBaseZone === todayBaseZone) {
-        const prevCamp = getDayCamp(i);
+        const prevCamp = getDayCampActivityZone(i);
         if (prevCamp && prevCamp.coords) return prevCamp.coords;
         const lastAct = prevActs[prevActs.length - 1];
         return lastAct.coords || todayBase;
       }
-      // Rule 3: different zone, transit this morning — start from today's camp
+      // Rule 3: different zone, transit this morning — start from today's activity-zone camp
       // (most accurate — e.g. Cascade Creek is 1h closer than Te Anau town)
-      const todayCamp = getDayCamp(dayIdx);
+      const todayCamp = getDayCampActivityZone(dayIdx);
       return (todayCamp && todayCamp.coords) ? todayCamp.coords : todayBase;
     }
   }
