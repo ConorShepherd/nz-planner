@@ -1639,6 +1639,7 @@ const BASE_COORDS = {
   'Marlborough Sounds': [-41.2960, 174.0040],
   'Picton':         [-41.2960, 174.0040],
   'Blenheim':       [-41.5130, 173.9610],
+  'Dunedin':        [-45.8788, 170.5028],
   'Kaikoura':       [-42.4000, 173.6810],
   'Hanmer':         [-42.5230, 172.8280],
   'Arthurs Pass':   [-42.9470, 171.5630],
@@ -1775,6 +1776,10 @@ const CAMPSITES = {
   'Picton': [
     { name:'Picton TOP 10 Holiday Park', coords:[-41.2960,174.0040], link:'https://www.top10.co.nz/parks/picton-top-10-holiday-park/', type:'holiday-park', selfContainedOnly:false },
     { name:'Anakiwa DOC Campsite', coords:[-41.2270,174.0760], link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/marlborough/places/marlborough-sounds/things-to-do/camping/', type:'doc-standard', selfContainedOnly:false },
+  ],
+  'Dunedin': [
+    { name:'Leith Valley Touring Park ($20/pp)', coords:[-45.8500,170.5100], link:'https://www.leithvalley.co.nz/', type:'holiday-park', selfContainedOnly:false },
+    { name:'Portobello Village Tourist Park', coords:[-45.8630,170.6580], link:'https://www.portobellotouristpark.co.nz/', type:'holiday-park', selfContainedOnly:false },
   ],
   'Kaikoura': [
     { name:'Kaikōura TOP 10 Holiday Park', coords:[-42.4000,173.6810], link:'https://www.top10.co.nz/parks/kaikoura-top-10-holiday-park/', type:'holiday-park', selfContainedOnly:false },
@@ -2037,8 +2042,8 @@ const DRIVE = {
   'Mt Cook':      { 'CHC': 4.0, 'Castle Hill': 2.75, 'Wanaka': 2.25, 'Queenstown': 3.75, 'Glenorchy': 5.0, 'Te Anau': 5.75, 'Milford': 8.25},
   'Wanaka':       { 'Mt Cook': 2.25, 'Glenorchy': 1.5, 'Queenstown': 1.5, 'Te Anau': 3.0, 'Franz Josef': 3.83, 'Milford': 5.5},
   'Glenorchy':    { 'Wanaka': 1.5, 'Queenstown': 0.75, 'Te Anau': 2.75, 'Routeburn': 0.75, 'Milford': 3.5, 'Bluff': 3.5, 'Stewart Island': 3.75},
-  'Queenstown':   { 'Wanaka': 1.5, 'Glenorchy': 0.75, 'Te Anau': 2.75, 'Bluff': 3.0, 'Mt Cook': 3.75, 'Milford': 3.25, 'Haast': 4.5},
-  'Te Anau':      { 'Queenstown': 2.75, 'Wanaka': 3.0, 'Milford': 2.5, 'Bluff': 2.6, 'Glenorchy': 2.75, 'Haast': 5.75, 'Franz Josef': 8.5},
+  'Queenstown':   { 'Wanaka': 1.5, 'Glenorchy': 0.75, 'Te Anau': 2.75, 'Bluff': 3.0, 'Mt Cook': 3.75, 'Milford': 3.25, 'Haast': 4.5, 'Dunedin': 3.0 },
+  'Te Anau':      { 'Queenstown': 2.75, 'Wanaka': 3.0, 'Milford': 2.5, 'Bluff': 2.6, 'Glenorchy': 2.75, 'Haast': 5.75, 'Franz Josef': 8.5, 'Dunedin': 3.75 },
   'Milford':      { 'Te Anau': 2.5, 'Bluff': 5.0, 'Stewart Island': 5.25, 'Haast': 8.25, 'Franz Josef': 11.0, 'Fox Glacier': 7.0},
   'Bluff':        { 'Te Anau': 2.6, 'Queenstown': 3.0, 'Haast': 6.5, 'Stewart Island': 0.25, 'CHC': 5.5, 'Wanaka': 5.5, 'Franz Josef': 10.25, 'Fox Glacier': 9.75, 'Hokitika': 10.75},
   'Stewart Island': { 'Bluff': 0.25, 'Te Anau': 2.85, 'Queenstown': 3.25, 'Haast': 6.75, 'Wanaka': 5.75, 'CHC': 5.75, 'Franz Josef': 10.75, 'Fox Glacier': 10.25, 'Hokitika': 11.0, 'Punakaiki': 12.0},
@@ -2053,7 +2058,8 @@ const DRIVE = {
   'Marahau':      { 'Punakaiki': 2.5, 'Takaka': 1.25, 'Nelson': 1.0, 'Kaikoura': 4.5, 'Nelson Lakes': 2.5, 'Blenheim': 2.75, 'Picton': 3.5 },
   'Takaka':       { 'Marahau': 1.25, 'Nelson': 1.25, 'Nelson Lakes': 2.5, 'Picton': 4.0, 'Blenheim': 3.5, 'Kaikoura': 5.75, 'Hanmer': 5.5},
   'Nelson':       { 'Marahau': 1.0, 'Takaka': 1.25, 'Kaikoura': 3.5 },
-  'Kaikoura':     { 'Marahau': 4.5, 'Nelson': 3.5, 'Hanmer': 2.0, 'CHC': 2.5 },
+  'Dunedin':      { 'Queenstown': 3.0, 'Wanaka': 3.5, 'Bluff': 3.0, 'Te Anau': 3.75, 'CHC': 3.0, 'Kaikoura': 5.5, 'Timaru': 2.0 },
+  'Kaikoura':     { 'Marahau': 4.5, 'Nelson': 3.5, 'Hanmer': 2.0, 'CHC': 2.5, 'Dunedin': 5.5 },
   'Hanmer':       { 'Kaikoura': 2.0, 'CHC': 1.5, 'Arthurs Pass': 1.75 },
   'Arthurs Pass': { 'CHC': 1.75, 'Hanmer': 1.75, 'Castle Hill': 0.5, 'Mt Cook': 3.5, 'Wanaka': 4.5, 'Queenstown': 5.5, 'Glenorchy': 6.0, 'Te Anau': 7.0, 'Mackenzie': 2.5, 'Peel Forest': 1.5},
   'Mackenzie':    { 'CHC': 3.25, 'Castle Hill': 2.0, 'Arthurs Pass': 2.5, 'Peel Forest': 0.75, 'Mt Cook': 1.25, 'Wanaka': 3.5, 'Glenorchy': 4.5, 'Queenstown': 4.25, 'Te Anau': 6.0 },
@@ -2181,12 +2187,25 @@ const ACTIVITIES = [
   { id:'ohau-seals', coords:[-42.340,173.660], name:'Ōhau Stream — Fur Seal Pups at Dawn', zone:'Kaikoura', baseZone:'Kaikoura', types:['wildlife'], dist:1, gain:20, actHrs:1.0, driveFromBase:0.17, notes:'Fur seal pups use the waterfall pools of Ōhau Stream as playgrounds — hundreds of them in an intimate gorge setting. Go at dawn for best experience with fewest visitors. Pull-off on SH1, 25km north of Kaikōura (Ōhau Point). 10-min walk to the waterfall. One of the most charismatic wildlife encounters in NZ — very different to the Peninsula seal colony.', hard:false, rec:true, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/marlborough/places/kaikoura-area/', isNew:true },
   { id:'mt-fyffe-overnight', coords:[-42.376,173.655], name:'Mt Fyffe — Overnight at Hut', zone:'Kaikoura', baseZone:'Kaikoura', types:['hike'], dist:12, gain:1100, actHrs:3.5, driveFromBase:0.17, notes:'Sleep at Mt Fyffe Hut (1100m, 8 bunks, first come first served, ~$15). Watch sunset over the Kaikōura Peninsula from above, then summit at dawn. Mountain-meets-ocean at golden hour is uniquely striking. Takes 2h up to hut at your pace. Summit adds another 1h from hut. First-come hut — arrive early afternoon to secure a bunk. Consider instead of or alongside whale watch.', hard:true, rec:true, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/marlborough/places/ka-whata-tu-o-rakihouia-clarence/things-to-do/huts/mt-fyffe-hut/', isNew:true },
 
+  // ── Dunedin / Otago Peninsula ──────────────────────────────────────────
+  { id:'sandfly-bay-penguins', coords:[-45.9280,170.7280], name:'Sandfly Bay — Yellow-Eyed Penguins', zone:'Dunedin', baseZone:'Dunedin', types:['wildlife'], dist:2, gain:80, actHrs:1.5, driveFromBase:0.5, notes:'Otago Peninsula. 20-min walk over sand dunes to beach hide. Yellow-eyed penguins (hoiho) come ashore 3–5pm after feeding at sea — among the world\'s rarest penguins. Stay in or near the hide, completely silent, no flash photography. Best timing: arrive 3:15pm. Allow 90 min including walk. Free. Park at Sandfly Bay carpark off Seal Point Rd.', hard:false, rec:true, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/otago/places/otago-peninsula-area/things-to-do/tracks/sandfly-bay-track/', isNew:true },
+  { id:'moeraki-boulders', coords:[-45.3440,170.8260], name:'Moeraki Boulders', zone:'Dunedin', baseZone:'Dunedin', types:['scenic'], dist:0.5, gain:10, actHrs:0.5, driveFromBase:0.83, notes:'Signed pull-off on SH1 ~80km north of Dunedin. 10-min walk to beach. Enormous spherical boulders up to 2m diameter — formed over 65 million years. Dusk light is ideal. 30-min stop. ~$2 coin parking. On the direct route north toward Kaikōura/CHC.', hard:false, rec:true, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/otago/places/moeraki-boulders/', isNew:true },
+
+  // ── Nelson region drive stopover ──────────────────────────────────────
+  { id:'pelorus-bridge', coords:[-41.3030,173.5680], name:'Pelorus Bridge — Rimu Forest Walk', zone:'Nelson Lakes', baseZone:'Nelson Lakes', types:['hike'], dist:5, gain:80, actHrs:0.75, driveFromBase:0.67, notes:'DOC reserve at the Pelorus/Rai river confluence, on SH6 ~45min south of Nelson. Ancient rimu and red beech forest alongside a clear green river. DOC-rated 1h walk; at 0.75× ~45min. Fully sheltered under canopy — ideal leg-stretch in any weather on a long drive day. Basic DOC campsite on site. En route between the West Coast/Takaka and Nelson.', hard:false, rec:true, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/marlborough/places/pelorus-and-rai-area/', isNew:true },
+
+  // ── Marlborough Sounds — ridge route ──────────────────────────────────
+  { id:'qct-ridge-torea-anakiwa', coords:[-41.1500,174.1200], name:'Queen Charlotte Track — Torea Bay Ridge to Anakiwa', zone:'Marlborough Sounds', baseZone:'Picton', types:['hike'], dist:18, gain:600, actHrs:4.0, driveFromBase:0, notes:'The best ridge day on the QCT — different to the Ship Cove coastal section. Water taxi Picton → Torea Bay (~$45pp, 20min, Cougar Line +64 3 573 7925). Steep climb to the highest point on the track at 400m with simultaneous views over Queen Charlotte Sound and Kenepuru Sound. Exposed ridgeline then forest descent to Anakiwa. Water taxi return Anakiwa → Picton (~$30pp). DOC time 5–6h; at 0.75× ~4h walking. Total ~$75pp.', hard:false, rec:true, link:'https://marlboroughnz.com/explore-marlborough/see-do/walks/queen-charlotte-track-day-walks/', isNew:true },
+
+  // ── Kahurangi NP (Takaka base) ────────────────────────────────────────
+  { id:'tablelands-kahurangi', coords:[-41.0500,172.6800], name:'Tablelands — Karst Plateau, Kahurangi NP', zone:'Takaka', baseZone:'Takaka', types:['hike'], dist:10, gain:800, actHrs:3.0, driveFromBase:0.75, notes:'Flora carpark, ~45min from Takaka (last section gravel). 800m gain through beech forest to a surreal limestone karst plateau at ~1000m — sculpted rock formations, alpine tarns, views over Golden Bay. DOC time 4h return; at 0.75× ~3h. No summit weather dependency — outstanding in cloud. Same carpark as Mt Arthur. Good wet-weather day or standalone afternoon walk.', hard:true, rec:true, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/nelson-tasman/places/kahurangi-national-park/things-to-do/tracks/flora-track-and-tablelands/', isNew:true },
+  { id:'mt-arthur-summit', coords:[-41.1630,172.6820], name:'Mt Arthur Summit (1795m)', zone:'Takaka', baseZone:'Takaka', types:['hike'], dist:16, gain:1100, actHrs:4.5, driveFromBase:0.75, notes:'Flora carpark, ~45min from Takaka. 1100m gain through beech forest to bushline then open ridge to 1795m summit. DOC time 6h return; at 0.75× ~4.5h. Views: Golden Bay, Tasman Bay, Nelson Lakes, Southern Alps on a clear day. WEATHER CRITICAL — clear conditions only. If summit is in cloud, Tablelands plateau (same carpark) is an excellent alternative.', hard:true, rec:true, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/nelson-tasman/places/kahurangi-national-park/things-to-do/tracks/mount-arthur-track/', isNew:true },
 ];
 
 // ═══════════════════════════════════════════════════════
 // ZONE ROUTE ORDER (for conflict detection)
 // ═══════════════════════════════════════════════════════
-const ZONE_ORDER = ['CHC','Castle Hill','Arthurs Pass','Peel Forest','Mackenzie','Mt Cook','Wanaka','Glenorchy','Queenstown','Te Anau','Milford','Bluff','Stewart Island','Haast','Franz Josef','Fox Glacier','Hokitika','Punakaiki','Marahau','Takaka','Nelson Lakes','Marlborough Sounds','Picton','Blenheim','Kaikoura','Hanmer'];
+const ZONE_ORDER = ['CHC','Castle Hill','Arthurs Pass','Peel Forest','Mackenzie','Mt Cook','Wanaka','Glenorchy','Queenstown','Te Anau','Milford','Bluff','Stewart Island','Dunedin','Haast','Franz Josef','Fox Glacier','Hokitika','Punakaiki','Marahau','Takaka','Nelson Lakes','Marlborough Sounds','Picton','Blenheim','Kaikoura','Hanmer'];
 
 function zoneOrder(z) { const i = ZONE_ORDER.indexOf(z); return i === -1 ? 99 : i; }
 
@@ -2963,7 +2982,7 @@ function renderSheet(){
       <div class="caf-field">
         <div class="caf-label">Zone</div>
         <select class="caf-input" id="caf-zone">
-          ${['CHC','Castle Hill','Arthurs Pass','Peel Forest','Mackenzie','Mt Cook','Wanaka','Glenorchy','Queenstown','Te Anau','Milford','Bluff','Stewart Island','Haast','Franz Josef','Fox Glacier','Hokitika','Punakaiki','Marahau','Takaka','Nelson Lakes','Picton','Blenheim','Kaikoura','Hanmer'].map(z=>`<option value="${z}"${editing&&editing.zone===z?' selected':''}>${z}</option>`).join('')}
+          ${['CHC','Castle Hill','Arthurs Pass','Peel Forest','Mackenzie','Mt Cook','Wanaka','Glenorchy','Queenstown','Te Anau','Milford','Bluff','Stewart Island','Dunedin','Haast','Franz Josef','Fox Glacier','Hokitika','Punakaiki','Marahau','Takaka','Nelson Lakes','Picton','Blenheim','Kaikoura','Hanmer'].map(z=>`<option value="${z}"${editing&&editing.zone===z?' selected':''}>${z}</option>`).join('')}
         </select>
       </div>
       <div class="caf-field">
