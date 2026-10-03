@@ -55,6 +55,14 @@
 
 ---
 
+## HTML linting
+
+```sh
+npx --yes markuplint index.html
+```
+
+---
+
 ## State Serialisation Schema
 
 ```javascript

@@ -71,6 +71,7 @@ body {
 .header-title {
   font-family: var(--serif);
   font-size: 17px;
+  font-weight: inherit;
   color: var(--text);
 }
 .header-title em { font-style: italic; color: var(--accent); }
@@ -1304,7 +1305,7 @@ body {
 <!-- HEADER -->
 <div class="header">
   <div class="header-top">
-    <div class="header-title" id="trip-title">NZ <em>North → South</em> Planner</div>
+    <h1 class="header-title" id="trip-title">NZ <em>North → South</em> Planner</h1>
     <div class="header-badges">
       <div class="hbadge" id="badge-sched">0 / 0 planned</div>
       <div class="hbadge warn" id="badge-warn" style="display:none">⚠ conflicts</div>
@@ -1369,7 +1370,7 @@ body {
   <div class="modal" style="max-width:400px">
     <div class="modal-title">Export <em>CSV</em></div>
     <div class="modal-sub" id="csv-modal-filename" style="margin-bottom:10px"></div>
-    <textarea id="csv-modal-text" readonly style="width:100%;height:180px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text2);font-family:var(--mono);font-size:9px;padding:10px;resize:none;outline:none;line-height:1.5"></textarea>
+    <textarea id="csv-modal-text" aria-label="Exported trip plan CSV" readonly style="width:100%;height:180px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text2);font-family:var(--mono);font-size:9px;padding:10px;resize:none;outline:none;line-height:1.5"></textarea>
     <div style="display:flex;gap:8px;margin-top:12px">
       <button class="modal-btn primary" style="flex:1" onclick="copyCsvToClipboard()">📋 Copy all</button>
       <button class="modal-btn secondary" style="flex:1" onclick="closeCsvModal()">Done</button>
@@ -5100,8 +5101,6 @@ function checkFirstRun() {
         <button class="wizard-btn wizard-btn-secondary" onclick="wizardBack(2)">← Back</button>
         <button class="wizard-btn wizard-btn-primary" onclick="wizardFinish()">Start planning →</button>
       </div>
-    </div>
-
     </div>
   </div>
 </div>
