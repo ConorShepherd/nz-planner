@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>NZ South Island — Trip Planner</title>
+<title>NZ North → South — Trip Planner</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 
 <style>
@@ -1272,6 +1272,31 @@ body {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }
+
+/* ── v2 additions: North Island + Cook Strait ── */
+.tag-bike { background: rgba(212,176,64,0.12); color: #e0c060; border: 1px solid rgba(212,176,64,0.28); }
+.tag-book { background: rgba(208,96,48,0.14); color: #e89070; border: 1px solid rgba(208,96,48,0.35); }
+.tag-lotr { background: rgba(152,120,208,0.14); color: #c8b0f0; border: 1px solid rgba(152,120,208,0.3); }
+.island-filters { display: flex; gap: 6px; margin-top: 6px; overflow-x: auto; scrollbar-width: none; }
+.island-filters::-webkit-scrollbar { display: none; }
+.island-divider { font-family: var(--serif); font-style: italic; font-size: 15px; color: var(--accent); padding: 14px 4px 3px; border-bottom: 1px solid var(--border); margin-bottom: 2px; }
+.hol-lbl { color: var(--gold); letter-spacing: 0.5px; }
+.sched-item.arrive-item { border-left-color: var(--sky); }
+.sched-item.fly-item { border-left-color: var(--gold); }
+.book-card { background: var(--bg2); border: 1px solid var(--warn-border); border-radius: var(--radius); margin-bottom: 10px; overflow: hidden; }
+.book-card-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 14px; cursor: pointer; font-family: var(--mono); font-size: 11px; color: var(--text); }
+.book-count { font-size: 10px; color: #e08060; white-space: nowrap; }
+.book-note { font-size: 11px; color: var(--text2); padding: 0 14px 8px; line-height: 1.5; }
+.book-row { display: flex; align-items: flex-start; gap: 8px; padding: 8px 14px; border-top: 1px solid var(--border); font-size: 12px; cursor: pointer; }
+.book-row input { margin-top: 2px; accent-color: var(--accent); width: 15px; height: 15px; flex-shrink: 0; }
+.book-row.done .book-what { opacity: 0.45; text-decoration: line-through; }
+.book-row.missing { background: var(--warn-bg); cursor: default; }
+.book-date { font-family: var(--mono); font-size: 10px; color: var(--text3); min-width: 66px; flex-shrink: 0; margin-top: 2px; }
+.book-what { flex: 1; min-width: 0; color: var(--text); line-height: 1.35; overflow-wrap: anywhere; }
+.book-what strong { font-weight: 500; }
+.book-sub { font-size: 10.5px; color: var(--text3); }
+.book-row a { color: #70c8e0; text-decoration: none; font-family: var(--mono); font-size: 11px; padding: 0 2px; }
+.book-tick { width: 15px; text-align: center; color: #e08060; flex-shrink: 0; }
 </style>
 </head>
 <body>
@@ -1279,7 +1304,7 @@ body {
 <!-- HEADER -->
 <div class="header">
   <div class="header-top">
-    <div class="header-title" id="trip-title">NZ <em>South Island</em> Planner</div>
+    <div class="header-title" id="trip-title">NZ <em>North → South</em> Planner</div>
     <div class="header-badges">
       <div class="hbadge" id="badge-sched">0 / 0 planned</div>
       <div class="hbadge warn" id="badge-warn" style="display:none">⚠ conflicts</div>
@@ -1373,6 +1398,8 @@ body {
       <div class="ts-item"><div id="ts-elev">—</div><div class="ts-lbl">Mt Doom summits</div></div>
       <div class="ts-item" onclick="openQuestModal()" style="cursor:pointer"><div id="ts-dist">—</div><div class="ts-lbl">Quest progress ↗</div></div>
       <div class="ts-item"><div class="ts-val" id="ts-hard">—</div><div class="ts-lbl">Hard days</div></div>
+      <div class="ts-item"><div id="ts-island">—</div><div class="ts-lbl">Island days</div></div>
+      <div class="ts-item" onclick="toggleBookCard(true)" style="cursor:pointer"><div id="ts-book">—</div><div class="ts-lbl">To book ↗</div></div>
     </div>
 
     <!-- Fatigue chart -->
@@ -1380,6 +1407,9 @@ body {
       <div class="fatigue-chart-title">Daily effort (drive + elev gain proxy)</div>
       <div class="fatigue-bars" id="fatigue-bars"></div>
     </div>
+
+    <!-- Book-ahead checklist -->
+    <div class="book-card" id="book-card" style="display:none"></div>
 
     <!-- Day cards -->
     <div id="days-container"></div>
@@ -1404,7 +1434,282 @@ body {
       </div>
     </div>
 
-    <div class="roads-section-title">High-risk roads on your route</div>
+    <div class="roads-section-title">North Island — your route</div>
+
+    <!-- Cook Strait ferry -->
+    <div class="road-card">
+      <div class="road-card-header">
+        <div class="road-sh risk-high">⛴</div>
+        <div class="road-info">
+          <div class="road-name">Cook Strait Ferry — Wellington → Picton</div>
+          <div class="road-desc">Interislander or Bluebridge · ~3h20–3h45 + 45–60 min check-in</div>
+        </div>
+      </div>
+      <div class="road-body">
+        <div class="road-risk-row">
+          <span class="road-risk-chip danger">Book vehicle space early</span>
+          <span class="road-risk-chip caution">Southerlies cancel sailings</span>
+          <span class="road-risk-chip info">Campervan ~NZ$270–400</span>
+        </div>
+        <div class="road-note">
+          Late Dec–Jan is the busiest time of year on the Strait — book the van 4–8+ weeks out (campervans are priced by length). Big southerlies cancel sailings, so keep the day after the crossing loose. Confirm with your rental company whether the van goes on the ferry or you swap vehicles at the terminals. The last hour through Queen Charlotte Sound is the best part — be on deck.
+        </div>
+        <div class="road-links">
+          <a class="road-link primary" href="https://www.interislander.co.nz/" target="_blank" rel="noopener">Interislander ↗</a>
+          <a class="road-link primary" href="https://www.bluebridge.co.nz/" target="_blank" rel="noopener">Bluebridge ↗</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- SH35 East Cape -->
+    <div class="road-card">
+      <div class="road-card-header">
+        <div class="road-sh risk-high">SH35</div>
+        <div class="road-info">
+          <div class="road-name">Pacific Coast Highway — Ōpōtiki → East Cape → Gisborne</div>
+          <div class="road-desc">~330 km of slow coastal road · allow 2 days</div>
+        </div>
+      </div>
+      <div class="road-body">
+        <div class="road-risk-row">
+          <span class="road-risk-chip danger">2026 storm damage</span>
+          <span class="road-risk-chip caution">Single-lane sections, delays</span>
+          <span class="road-risk-chip info">Sparse fuel & shops</span>
+        </div>
+        <div class="road-note">
+          Badly damaged in early 2026 storms. The Pōtaka–Te Araroa section reopened in Feb 2026 for 7am–7pm only, with five single-lane signal sections, reduced speeds and ~45 min delays, and NZTA described it as fragile and liable to close suddenly. Check the latest bulletin before committing to the East Cape loop. Fill up in Ōpōtiki or Gisborne. The East Cape lighthouse road is ~20 km of gravel.
+        </div>
+        <div class="road-links">
+          <a class="road-link primary" href="https://www.journeys.nzta.govt.nz/traffic-bulletins/sh35-reopens-around-east-cape-for-first-vehicles" target="_blank" rel="noopener">🔴 SH35 bulletin (Feb 2026) ↗</a>
+          <a class="road-link" href="https://www.journeys.nzta.govt.nz/highway-conditions" target="_blank" rel="noopener">Highway map ↗</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- SH38 Te Urewera -->
+    <div class="road-card">
+      <div class="road-card-header">
+        <div class="road-sh risk-med">SH38</div>
+        <div class="road-info">
+          <div class="road-name">SH38 Te Urewera — Murupara ↔ Waikaremoana ↔ Wairoa</div>
+          <div class="road-desc">Rotorua → Lake Waikaremoana ~3.5h · Waikaremoana → Wairoa ~1h15</div>
+        </div>
+      </div>
+      <div class="road-body">
+        <div class="road-risk-row">
+          <span class="road-risk-chip caution">~27 km still unsealed</span>
+          <span class="road-risk-chip caution">Check rental terms</span>
+          <span class="road-risk-chip info">No fuel in Te Urewera</span>
+        </div>
+        <div class="road-note">
+          Slow, narrow and winding through deep forest. The last reported unsealed stretch is ~27 km between Aniwaniwa and Mangapapa bridges (on the lake side). Some rental agreements exclude gravel state highways — check yours. Fill up in Murupara (west) or Wairoa (east). Whirinaki’s access road via Minginui is also gravel.
+        </div>
+        <div class="road-links">
+          <a class="road-link primary" href="https://www.journeys.nzta.govt.nz/regions/hawkes-bay" target="_blank" rel="noopener">Hawke’s Bay status ↗</a>
+          <a class="road-link primary" href="https://www.journeys.nzta.govt.nz/regions/bay-of-plenty" target="_blank" rel="noopener">Bay of Plenty status ↗</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Coromandel -->
+    <div class="road-card">
+      <div class="road-card-header">
+        <div class="road-sh risk-med">SH25</div>
+        <div class="road-info">
+          <div class="road-name">Coromandel Peninsula — SH25 / SH25A / 309 Rd</div>
+          <div class="road-desc">Thames → Coromandel Town → Hahei · twisty coast roads</div>
+        </div>
+      </div>
+      <div class="road-body">
+        <div class="road-risk-row">
+          <span class="road-risk-chip caution">Slips after heavy rain</span>
+          <span class="road-risk-chip caution">Gravel north of Colville</span>
+          <span class="road-risk-chip info">Holiday queues</span>
+        </div>
+        <div class="road-note">
+          Storms keep hitting the peninsula (major closures in 2023 and again in Jan 2026); roads and DOC tracks (Cathedral Cove included) close after heavy rain. Beyond Colville the road to Fletcher/Stony Bay is gravel and often excluded from rental insurance. Expect queues around Thames and Hahei between Christmas and mid-January.
+        </div>
+        <div class="road-links">
+          <a class="road-link primary" href="https://www.journeys.nzta.govt.nz/regions/waikato" target="_blank" rel="noopener">Waikato status ↗</a>
+          <a class="road-link" href="https://thecoromandel.nz/destinations/cathedral-cove" target="_blank" rel="noopener">Cathedral Cove status ↗</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Central plateau -->
+    <div class="road-card">
+      <div class="road-card-header">
+        <div class="road-sh risk-low">SH1</div>
+        <div class="road-info">
+          <div class="road-name">Desert Road & Tongariro — SH1 / SH47 / SH48</div>
+          <div class="road-desc">Tūrangi → Waiouru · Whakapapa / National Park Village</div>
+        </div>
+      </div>
+      <div class="road-body">
+        <div class="road-risk-row">
+          <span class="road-risk-chip caution">No Crossing parking at Mangatepopo</span>
+          <span class="road-risk-chip info">No fuel Tūrangi–Waiouru</span>
+          <span class="road-risk-chip info">Snow closures rare in summer</span>
+        </div>
+        <div class="road-note">
+          Exposed ~1,000m plateau; summer closures are usually crashes or high wind rather than snow. There is no summer parking for Crossing walkers at Mangatepopo — use a shuttle. The 2025 fire burnt the area around the Mangatepopo road; respect closures and the rāhui.
+        </div>
+        <div class="road-links">
+          <a class="road-link primary" href="https://www.journeys.nzta.govt.nz/regions/manawatu-whanganui" target="_blank" rel="noopener">Manawatū-Whanganui status ↗</a>
+          <a class="road-link" href="https://www.journeys.nzta.govt.nz/regions/waikato" target="_blank" rel="noopener">Waikato status ↗</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Taranaki -->
+    <div class="road-card">
+      <div class="road-card-header">
+        <div class="road-sh risk-med">SH3</div>
+        <div class="road-info">
+          <div class="road-name">Awakino Gorge / Mt Messenger — Waitomo ↔ New Plymouth</div>
+          <div class="road-desc">~2.5h · or SH43 Forgotten World Highway to Taumarunui</div>
+        </div>
+      </div>
+      <div class="road-body">
+        <div class="road-risk-row">
+          <span class="road-risk-chip caution">Bypass under construction</span>
+          <span class="road-risk-chip caution">Slips in the gorge</span>
+          <span class="road-risk-chip info">SH43 now fully sealed</span>
+        </div>
+        <div class="road-note">
+          The only main road into Taranaki from the north. The Mt Messenger bypass (Te Ara o Te Ata) was still being built in 2026, so expect stop/go works. SH43 (Forgotten World Highway) is now fully sealed through the Tāngarākau Gorge but is narrow, winding and has no fuel for long stretches — fill up in Stratford or Taumarunui.
+        </div>
+        <div class="road-links">
+          <a class="road-link primary" href="https://www.journeys.nzta.govt.nz/regions/taranaki" target="_blank" rel="noopener">Taranaki status ↗</a>
+          <a class="road-link" href="https://www.journeys.nzta.govt.nz/regions/waikato" target="_blank" rel="noopener">Waikato status ↗</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Northland -->
+    <div class="road-card">
+      <div class="road-card-header">
+        <div class="road-sh risk-low">SH1</div>
+        <div class="road-info">
+          <div class="road-name">Northland — Brynderwyns, SH12 kauri coast, Far North</div>
+          <div class="road-desc">Auckland → Whangārei ~2h · Paihia → Cape Reinga ~3h</div>
+        </div>
+      </div>
+      <div class="road-body">
+        <div class="road-risk-row">
+          <span class="road-risk-chip caution">Ninety Mile Beach: not for rentals</span>
+          <span class="road-risk-chip info">Brynderwyns open over summer</span>
+          <span class="road-risk-chip info">SH12 narrow & twisty</span>
+        </div>
+        <div class="road-note">
+          The SH1 Brynderwyn Hills had long repair closures in 2024 and weekend closures in Nov 2025, timed to avoid summer — check before you go. Rental agreements prohibit driving on Ninety Mile Beach or down Te Paki Stream. SH12 through Waipoua Forest is slow with lots of tight bends.
+        </div>
+        <div class="road-links">
+          <a class="road-link primary" href="https://www.journeys.nzta.govt.nz/regions/northland" target="_blank" rel="noopener">Northland status ↗</a>
+          <a class="road-link" href="https://www.journeys.nzta.govt.nz/regions/auckland" target="_blank" rel="noopener">Auckland status ↗</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Holiday traffic -->
+    <div class="road-card">
+      <div class="road-card-header">
+        <div class="road-sh risk-med">🎄</div>
+        <div class="road-info">
+          <div class="road-name">Holiday traffic — Christmas & New Year</div>
+          <div class="road-desc">Peak outbound ~24–27 Dec · peak return ~2–5 Jan</div>
+        </div>
+      </div>
+      <div class="road-body">
+        <div class="road-risk-row">
+          <span class="road-risk-chip caution">Avoid leaving Auckland 26–27 Dec</span>
+          <span class="road-risk-chip info">Use NZTA holiday predictor</span>
+        </div>
+        <div class="road-note">
+          The big city exits (SH1 north and south of Auckland, SH2/SH25 to the Coromandel and Tauranga, SH1 north of Wellington) jam on the days around Christmas and when everyone heads home in early January. Shift transit days earlier or later, or drive early morning. NZTA publishes a holiday traffic prediction map.
+        </div>
+        <div class="road-links">
+          <a class="road-link primary" href="https://www.journeys.nzta.govt.nz/journey-planner" target="_blank" rel="noopener">NZTA journey planner ↗</a>
+          <a class="road-link" href="https://www.journeys.nzta.govt.nz/highway-conditions" target="_blank" rel="noopener">Highway map ↗</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="roads-section-title">South Island — north-west & West Coast</div>
+
+    <!-- SH60 Takaka Hill -->
+    <div class="road-card">
+      <div class="road-card-header">
+        <div class="road-sh risk-med">SH60</div>
+        <div class="road-info">
+          <div class="road-name">Tākaka Hill — the only road into Golden Bay</div>
+          <div class="road-desc">Motueka → Tākaka · ~1h of hairpins</div>
+        </div>
+      </div>
+      <div class="road-body">
+        <div class="road-risk-row">
+          <span class="road-risk-chip caution">Slips close it</span>
+          <span class="road-risk-chip info">Occasional night maintenance closures</span>
+        </div>
+        <div class="road-note">
+          A big, winding hill climb and the only road access to Golden Bay; slips have closed it for long periods before. If it closes, Golden Bay is cut off by road. Check before you commit to Heaphy logistics.
+        </div>
+        <div class="road-links">
+          <a class="road-link primary" href="https://www.journeys.nzta.govt.nz/regions/tasman" target="_blank" rel="noopener">Tasman status ↗</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- SH67 / SH6 West Coast -->
+    <div class="road-card">
+      <div class="road-card-header">
+        <div class="road-sh risk-med">SH6/67</div>
+        <div class="road-info">
+          <div class="road-name">Buller Gorge, Karamea Highway & the Punakaiki coast</div>
+          <div class="road-desc">Murchison → Westport ~1h20 · Westport → Karamea ~1h30 (dead end)</div>
+        </div>
+      </div>
+      <div class="road-body">
+        <div class="road-risk-row">
+          <span class="road-risk-chip caution">Rockfall & slips in heavy rain</span>
+          <span class="road-risk-chip caution">Ōpārara road: gravel</span>
+          <span class="road-risk-chip info">Karamea = dead end</span>
+        </div>
+        <div class="road-note">
+          The Buller Gorge (one-lane Hawks Crag) and the Westport–Greymouth coast road via Punakaiki both close for rockfall and slips after West Coast downpours. SH67 to Karamea is the only way in and out. The road to the Ōpārara arches is ~16 km of gravel, and Kōhaihai (Heaphy end) is 15 min past Karamea.
+        </div>
+        <div class="road-links">
+          <a class="road-link primary" href="https://www.journeys.nzta.govt.nz/regions/west-coast" target="_blank" rel="noopener">West Coast status ↗</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- SH7 Lewis Pass -->
+    <div class="road-card">
+      <div class="road-card-header">
+        <div class="road-sh risk-low">SH7</div>
+        <div class="road-info">
+          <div class="road-name">Lewis Pass — West Coast to Hanmer / Christchurch</div>
+          <div class="road-desc">Reefton → Springs Junction → Hanmer turn-off · alternative to Arthur’s Pass</div>
+        </div>
+      </div>
+      <div class="road-body">
+        <div class="road-risk-row">
+          <span class="road-risk-chip info">Lower, gentler than Arthur’s Pass</span>
+          <span class="road-risk-chip info">Long gaps between fuel</span>
+        </div>
+        <div class="road-note">
+          Usually straightforward in summer. Good finish to the trip via Maruia Hot Springs and Hanmer if you want to skip Arthur’s Pass. Fuel up in Reefton or Springs Junction.
+        </div>
+        <div class="road-links">
+          <a class="road-link primary" href="https://www.journeys.nzta.govt.nz/regions/canterbury" target="_blank" rel="noopener">Canterbury status ↗</a>
+          <a class="road-link" href="https://www.journeys.nzta.govt.nz/regions/west-coast" target="_blank" rel="noopener">West Coast status ↗</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="roads-section-title">South Island — other roads (from the March trip)</div>
+
 
     <!-- Homer Tunnel / SH94 -->
     <div class="road-card">
@@ -1417,13 +1722,13 @@ body {
       </div>
       <div class="road-body">
         <div class="road-risk-row">
-          <span class="road-risk-chip danger">⚠ Avalanche risk Mar–Apr</span>
+          <span class="road-risk-chip caution">Avalanche risk lower in summer</span>
           <span class="road-risk-chip danger">Tunnel closures: no notice</span>
           <span class="road-risk-chip caution">Rockfall on approach</span>
           <span class="road-risk-chip info">No fuel Milford side</span>
         </div>
         <div class="road-note">
-          The tunnel closes without warning for avalanche control blasting — typically 1–3h wait. March is shoulder season so risk is lower than winter but still real. Check status before departing Te Anau. Fill up in Te Anau (no fuel at Milford). No cell coverage for most of the road.
+          The tunnel closes without warning for avalanche control blasting — typically 1–3h wait. Summer avalanche risk is low, but rockfall closures still happen. Check status before departing Te Anau. Fill up in Te Anau (no fuel at Milford). No cell coverage for most of the road.
         </div>
         <div class="road-links">
           <a class="road-link primary" href="https://www.journeys.nzta.govt.nz/regions/southland" target="_blank" rel="noopener">🔴 Southland live status ↗</a>
@@ -1450,7 +1755,7 @@ body {
           <span class="road-risk-chip info">Check before 7am departure</span>
         </div>
         <div class="road-note">
-          Most likely closure on your whole route. Heavy rain (common in March) causes slips and washouts — can close for hours or days. Fill tank completely in Wānaka. Carry water and food. Blue Pools / Thunder Creek Falls make good stops but add time — don't push into darkness.
+          Most likely closure on your whole route. Heavy rain (common year-round on the Coast) causes slips and washouts — can close for hours or days. Fill tank completely in Wānaka. Carry water and food. Blue Pools / Thunder Creek Falls make good stops but add time — don't push into darkness.
         </div>
         <div class="road-links">
           <a class="road-link primary" href="https://www.journeys.nzta.govt.nz/regions/otago" target="_blank" rel="noopener">🔴 Otago live status ↗</a>
@@ -1498,10 +1803,10 @@ body {
         <div class="road-risk-row">
           <span class="road-risk-chip caution">Snow & ice: May require chains</span>
           <span class="road-risk-chip caution">Rockfall in gorge sections</span>
-          <span class="road-risk-chip info">March: usually clear</span>
+          <span class="road-risk-chip info">Summer: usually clear</span>
         </div>
         <div class="road-note">
-          Late March is generally fine but snow is possible above 900m. The Otira Gorge section is narrow and twisting. Bealey Bridge section occasionally closes for repairs. If coming from the West Coast, check conditions at Greymouth i-SITE before heading over.
+          Dec–Jan is generally fine, though a cold southerly can still bring snow above 900m. The Otira Gorge section is narrow and twisting. Bealey Bridge section occasionally closes for repairs. If coming from the West Coast, check conditions at Greymouth i-SITE before heading over.
         </div>
         <div class="road-links">
           <a class="road-link primary" href="https://www.journeys.nzta.govt.nz/regions/canterbury" target="_blank" rel="noopener">🔴 Canterbury live status ↗</a>
@@ -1523,7 +1828,7 @@ body {
         <div class="road-risk-row">
           <span class="road-risk-chip caution">Very long drive day</span>
           <span class="road-risk-chip info">SH6 Queenstown section: busy</span>
-          <span class="road-risk-chip info">Jucy: fill in Queenstown</span>
+          <span class="road-risk-chip info">Fill up in Queenstown</span>
         </div>
         <div class="road-note">
           6.5h is a big day. Consider splitting overnight in Wānaka. The stretch from Te Anau to Queenstown (SH6) is well-maintained but busy with campervans. Queenstown to Wānaka has good passing opportunities.
@@ -1541,6 +1846,14 @@ body {
     <div class="road-card">
       <div class="road-card-header" style="flex-wrap:wrap;gap:6px;padding:12px 14px">
         <div style="width:100%;font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:4px">Open NZTA live status for your route regions:</div>
+        <a class="road-link primary" href="https://www.journeys.nzta.govt.nz/regions/northland" target="_blank" rel="noopener">Northland ↗</a>
+        <a class="road-link primary" href="https://www.journeys.nzta.govt.nz/regions/auckland" target="_blank" rel="noopener">Auckland ↗</a>
+        <a class="road-link primary" href="https://www.journeys.nzta.govt.nz/regions/waikato" target="_blank" rel="noopener">Waikato ↗</a>
+        <a class="road-link primary" href="https://www.journeys.nzta.govt.nz/regions/bay-of-plenty" target="_blank" rel="noopener">Bay of Plenty ↗</a>
+        <a class="road-link primary" href="https://www.journeys.nzta.govt.nz/regions/hawkes-bay" target="_blank" rel="noopener">Hawke’s Bay ↗</a>
+        <a class="road-link primary" href="https://www.journeys.nzta.govt.nz/regions/taranaki" target="_blank" rel="noopener">Taranaki ↗</a>
+        <a class="road-link primary" href="https://www.journeys.nzta.govt.nz/regions/manawatu-whanganui" target="_blank" rel="noopener">Manawatū-Whanganui ↗</a>
+        <a class="road-link" href="https://www.journeys.nzta.govt.nz/highway-conditions" target="_blank" rel="noopener">Gisborne / Wellington (highway map) ↗</a>
         <a class="road-link primary" href="https://www.journeys.nzta.govt.nz/regions/canterbury" target="_blank" rel="noopener">Canterbury ↗</a>
         <a class="road-link primary" href="https://www.journeys.nzta.govt.nz/regions/otago" target="_blank" rel="noopener">Otago ↗</a>
         <a class="road-link primary" href="https://www.journeys.nzta.govt.nz/regions/southland" target="_blank" rel="noopener">Southland ↗</a>
@@ -1572,6 +1885,8 @@ body {
     <div class="map-legend">
       <div class="map-legend-item"><div class="map-legend-dot" style="background:#78c848"></div>Planned stop</div>
       <div class="map-legend-item"><div class="map-legend-dot" style="background:rgba(120,200,72,0.4);border:1px solid #78c848"></div>Route</div>
+      <div class="map-legend-item"><div class="map-legend-dot" style="background:#48a8c0;border-radius:2px"></div>Start</div>
+      <div class="map-legend-item"><div class="map-legend-dot" style="background:#d4b040;border-radius:2px"></div>End</div>
     </div>
     <div class="map-no-acts" id="map-no-acts" style="display:none">Add activities to see your route</div>
   </div>
@@ -1596,6 +1911,14 @@ body {
       <button class="filter-chip" data-filter="rec">Friend rec'd</button>
       <button class="filter-chip" data-filter="new">New finds</button>
       <button class="filter-chip" data-filter="easy">Easy days</button>
+      <button class="filter-chip" data-filter="bike">Bike</button>
+      <button class="filter-chip" data-filter="book">Book ahead</button>
+      <button class="filter-chip" data-filter="lotr">LOTR</button>
+    </div>
+    <div class="island-filters">
+      <button class="filter-chip island-chip active" data-island="all">Both islands</button>
+      <button class="filter-chip island-chip" data-island="N">North Island</button>
+      <button class="filter-chip island-chip" data-island="S">South Island</button>
     </div>
   </div>
   <div class="sheet-body" id="sheet-body"></div>
@@ -1801,6 +2124,182 @@ const CAMPSITES = {
   ],
 };
 
+
+// ═══════════════════════════════════════════════════════
+// NORTH ISLAND + SI NORTH-WEST ZONES (added for Dec 2026 – Jan 2027 trip)
+// ═══════════════════════════════════════════════════════
+Object.assign(BASE_COORDS, {
+  // North Island
+  'Auckland':        [-36.8485, 174.7633],
+  'Whangarei':       [-35.7251, 174.3237],
+  'Bay of Islands':  [-35.2820, 174.0910],
+  'Far North':       [-34.5180, 172.8290],
+  'Kauri Coast':     [-35.7224, 173.6522],
+  'Thames':          [-37.1386, 175.5409],
+  'Coromandel Town': [-36.7590, 175.4990],
+  'Hahei':           [-36.8400, 175.7990],
+  'Tauranga':        [-37.6400, 176.1850],
+  'Rotorua':         [-38.1368, 176.2497],
+  'East Cape':       [-37.6340, 178.3650],
+  'Gisborne':        [-38.6623, 178.0176],
+  'Waikaremoana':    [-38.7700, 177.1030],
+  'Napier':          [-39.4928, 176.9120],
+  'Taupo':           [-38.6857, 176.0702],
+  'Tongariro':       [-39.2003, 175.5420],
+  'Wharepapa':       [-38.1520, 175.5400],
+  'Raglan':          [-37.8000, 174.8710],
+  'Waitomo':         [-38.2606, 175.1031],
+  'Taranaki':        [-39.0556, 174.0752],
+  'Wairarapa':       [-41.2180, 175.4590],
+  'Wellington':      [-41.2865, 174.7762],
+  // South Island additions (north-west / West Coast / Lewis Pass)
+  'Heaphy':          [-40.8580, 172.4650],
+  'Karamea':         [-41.2490, 172.1140],
+  'Westport':        [-41.7545, 171.6020],
+  'Lewis Pass':      [-42.3820, 172.3380],
+});
+
+Object.assign(CAMPSITES, {
+  'Auckland': [
+    { name:'Ambury Regional Park campground (Māngere — near the airport)', coords:[-36.9420,174.7560], type:'doc-standard', selfContainedOnly:false },
+    { name:'Muriwai Beach Motor Camp', coords:[-36.8180,174.4280], type:'holiday-park', selfContainedOnly:false },
+    { name:'Piha Domain Motor Camp', coords:[-36.9540,174.4710], type:'holiday-park', selfContainedOnly:false },
+    { name:'Shakespear Regional Park campground (near Gulf Harbour ferry)', coords:[-36.6100,174.8200], type:'doc-standard', selfContainedOnly:false },
+  ],
+  'Whangarei': [
+    { name:'Whangārei TOP 10 Holiday Park', coords:[-35.7120,174.3190], type:'holiday-park', selfContainedOnly:false },
+    { name:'Uretiti Beach DOC campsite (Bream Bay)', coords:[-35.9000,174.4600], link:'https://www.doc.govt.nz/uretiti?activitypageid=50582', type:'doc-standard', selfContainedOnly:false },
+    { name:'Tutukaka Holiday Park (Poor Knights boats)', coords:[-35.6140,174.5280], type:'holiday-park', selfContainedOnly:false },
+  ],
+  'Bay of Islands': [
+    { name:'Paihia TOP 10 Holiday Park', coords:[-35.2780,174.0750], type:'holiday-park', selfContainedOnly:false },
+    { name:'Russell TOP 10 Holiday Park', coords:[-35.2640,174.1250], type:'holiday-park', selfContainedOnly:false },
+    { name:'Cape Brett Hut (DOC — pre-book + walkway permit)', coords:[-35.1730,174.3270], link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/northland/places/cape-brett-and-whangamumu-area/things-to-do/cape-brett-hut/', type:'hut', selfContainedOnly:false },
+    { name:'Urupukapuka Island DOC campsites (ferry access, book)', coords:[-35.2200,174.2300], link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/northland/places/urupukapuka-island-recreation-reserve/things-to-do/urupukapuka-island-walk/', type:'doc-standard', selfContainedOnly:false },
+  ],
+  'Far North': [
+    { name:'Tapotupotu Bay DOC campsite (by Cape Reinga)', coords:[-34.4370,172.7150], link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/northland/places/te-paki-recreation-reserve/things-to-do/campsites/tapotupotu-campsite/', type:'doc-standard', selfContainedOnly:false },
+    { name:'Rarawa Beach DOC campsite', coords:[-34.7270,173.0750], link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/northland/places/wharekapu-paxton-point-conservation-area/things-to-do/rarawa-beach-campsite/', type:'doc-standard', selfContainedOnly:false },
+    { name:'Maitai Bay DOC campsite (Karikari Peninsula)', coords:[-34.8290,173.4070], type:'doc-standard', selfContainedOnly:false },
+  ],
+  'Kauri Coast': [
+    { name:'Trounson Kauri Park DOC campsite', coords:[-35.7224,173.6522], link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/northland/places/trounson-kauri-park/things-to-do/trounson-kauri-park-loop-track/', type:'doc-standard', selfContainedOnly:false },
+    { name:'Kai Iwi Lakes — Pine Beach campground (books out at New Year)', coords:[-35.8150,173.6460], type:'doc-standard', selfContainedOnly:false },
+    { name:'Kauri Coast TOP 10 (Kaihu)', coords:[-35.7700,173.7000], type:'holiday-park', selfContainedOnly:false },
+  ],
+  'Thames': [
+    { name:'Kauaeranga Valley DOC roadside campsites', coords:[-37.1000,175.6200], link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/coromandel/places/coromandel-forest-park/kauaeranga-valley/', type:'doc-standard', selfContainedOnly:false },
+    { name:'Pinnacles Hut (DOC — pre-book)', coords:[-37.0670,175.6660], link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/coromandel/places/coromandel-forest-park/things-to-do/pinnacles-hut/', type:'hut', selfContainedOnly:false },
+    { name:'Dickson Holiday Park, Thames', coords:[-37.1180,175.5370], type:'holiday-park', selfContainedOnly:false },
+  ],
+  'Coromandel Town': [
+    { name:'Fletcher Bay DOC campsite (end of the road)', coords:[-36.4790,175.3900], link:'https://thecoromandel.nz/destinations/coastal-walkway', type:'doc-standard', selfContainedOnly:false },
+    { name:'Stony Bay DOC campsite', coords:[-36.5060,175.4300], link:'https://thecoromandel.nz/destinations/coastal-walkway', type:'doc-standard', selfContainedOnly:false },
+    { name:'Port Jackson DOC campsite (beachfront)', coords:[-36.4850,175.3500], type:'doc-standard', selfContainedOnly:false },
+    { name:'Long Bay Motor Camp, Coromandel', coords:[-36.7580,175.4800], type:'holiday-park', selfContainedOnly:false },
+  ],
+  'Hahei': [
+    { name:'Hahei Holiday Resort', coords:[-36.8390,175.7960], type:'holiday-park', selfContainedOnly:false },
+    { name:'Hot Water Beach TOP 10', coords:[-36.8880,175.8170], type:'holiday-park', selfContainedOnly:false },
+    { name:'Broken Hills DOC campsite (Tairua River)', coords:[-37.1050,175.7700], type:'doc-standard', selfContainedOnly:false },
+  ],
+  'Tauranga': [
+    { name:'Mount Maunganui Beachside Holiday Park (base of Mauao)', coords:[-37.6330,176.1760], type:'holiday-park', selfContainedOnly:false },
+    { name:'McLaren Falls Park campground (council)', coords:[-37.8180,176.0480], type:'doc-standard', selfContainedOnly:false },
+  ],
+  'Rotorua': [
+    { name:'Rotorua TOP 10 Holiday Park', coords:[-38.1300,176.2450], type:'holiday-park', selfContainedOnly:false },
+    { name:'Blue Lake TOP 10 (Tikitapu)', coords:[-38.1960,176.3290], type:'holiday-park', selfContainedOnly:false },
+    { name:'Hot Water Beach DOC campsite, Lake Tarawera (walk/boat in — book)', coords:[-38.2340,176.4740], link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/bay-of-plenty/places/lake-tarawera-scenic-reserve/things-to-do/hot-water-beach-campsite/', type:'doc-standard', selfContainedOnly:false },
+  ],
+  'Taupo': [
+    { name:'Taupō DeBretts Spa Resort (hot pools on site)', coords:[-38.7020,176.1000], type:'holiday-park', selfContainedOnly:false },
+    { name:'Reids Farm freedom camping (free, riverside)', coords:[-38.6650,176.0870], type:'doc-freedom', selfContainedOnly:true },
+  ],
+  'Tongariro': [
+    { name:'Whakapapa Holiday Park', coords:[-39.2010,175.5440], type:'holiday-park', selfContainedOnly:false },
+    { name:'Mangahuia DOC campsite (SH47)', coords:[-39.1550,175.4680], type:'doc-standard', selfContainedOnly:false },
+    { name:'Ohakune TOP 10 Holiday Park', coords:[-39.4180,175.4010], type:'holiday-park', selfContainedOnly:false },
+    { name:'John Coull Hut/Campsite (Whanganui Journey — pre-book)', coords:[-39.1900,174.9420], link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/manawatu-whanganui/places/whanganui-national-park/things-to-do/campsites/john-coull-campsite/?activity=camping', type:'hut', selfContainedOnly:false },
+    { name:'Tīeke Kāinga (Whanganui Journey — pre-book)', coords:[-39.3420,174.9720], link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/manawatu-whanganui/places/whanganui-national-park/things-to-do/tracks/whanganui-journey/', type:'hut', selfContainedOnly:false },
+    { name:'Pipiriki DOC campsite (river end)', coords:[-39.4790,175.0390], type:'doc-standard', selfContainedOnly:false },
+  ],
+  'Taranaki': [
+    { name:'New Plymouth TOP 10 Holiday Park', coords:[-39.0460,174.1060], type:'holiday-park', selfContainedOnly:false },
+    { name:'Belt Road Seaside Holiday Park', coords:[-39.0590,174.0600], type:'holiday-park', selfContainedOnly:false },
+    { name:'Pouākai Hut (DOC, 34 bunks — pre-book)', coords:[-39.1990,174.0950], link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/taranaki/places/te-papa-kura-o-taranaki/things-to-do/tracks/mangorei-track/', type:'hut', selfContainedOnly:false },
+    { name:'Mangorei Rd car park (DOC allows overnight — check rules)', coords:[-39.1840,174.1180], link:'https://www.doc.govt.nz/pouakai-crossing', type:'doc-freedom', selfContainedOnly:true },
+  ],
+  'Waitomo': [
+    { name:'Waitomo TOP 10 Holiday Park', coords:[-38.2600,175.1060], type:'holiday-park', selfContainedOnly:false },
+    { name:'Marokopa Campground (coast)', coords:[-38.2960,174.7130], type:'holiday-park', selfContainedOnly:false },
+  ],
+  'Wharepapa': [
+    { name:'Bryce’s climbers’ accommodation/camping, Wharepapa South (check)', coords:[-38.1500,175.5400], type:'holiday-park', selfContainedOnly:false },
+    { name:'Lake Karapiro Camp', coords:[-37.9300,175.5300], type:'holiday-park', selfContainedOnly:false },
+  ],
+  'Raglan': [
+    { name:'Raglan Kopua Holiday Park', coords:[-37.8040,174.8730], type:'holiday-park', selfContainedOnly:false },
+  ],
+  'Napier': [
+    { name:'Kennedy Park TOP 10, Napier', coords:[-39.5040,176.8950], type:'holiday-park', selfContainedOnly:false },
+    { name:'Clifton Beach Reserve campground (Cape Kidnappers start)', coords:[-39.6330,177.0000], type:'holiday-park', selfContainedOnly:false },
+  ],
+  'Waikaremoana': [
+    { name:'Waikaremoana Holiday Park (Home Bay)', coords:[-38.7700,177.1030], link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/east-coast/places/te-urewera/things-to-do/campsites/waikaremoana-holiday-park/', type:'holiday-park', selfContainedOnly:false },
+    { name:'Panekire Hut (Great Walk — pre-book)', coords:[-38.8100,177.0010], link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/east-coast/places/te-urewera/things-to-do/tracks/lake-waikaremoana-great-walk/', type:'hut', selfContainedOnly:false },
+    { name:'Waiopaoa Hut (Great Walk — pre-book)', coords:[-38.7900,176.9930], link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/east-coast/places/te-urewera/things-to-do/tracks/lake-waikaremoana-great-walk/', type:'hut', selfContainedOnly:false },
+    { name:'Marauiti Hut (Great Walk — pre-book)', coords:[-38.7560,176.9850], link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/east-coast/places/te-urewera/things-to-do/tracks/lake-waikaremoana-great-walk/', type:'hut', selfContainedOnly:false },
+  ],
+  'Gisborne': [
+    { name:'Waikanae Beach TOP 10, Gisborne', coords:[-38.6700,178.0100], type:'holiday-park', selfContainedOnly:false },
+    { name:'Tolaga Bay Holiday Park (by the wharf)', coords:[-38.3800,178.3200], type:'holiday-park', selfContainedOnly:false },
+  ],
+  'East Cape': [
+    { name:'Te Araroa Holiday Park', coords:[-37.6250,178.3300], type:'holiday-park', selfContainedOnly:false },
+    { name:'Waihau Bay Holiday Park', coords:[-37.6200,177.9300], type:'holiday-park', selfContainedOnly:false },
+  ],
+  'Wellington': [
+    { name:'Wellington Waterfront Motorhome Park (handy for the ferry)', coords:[-41.2800,174.7800], type:'holiday-park', selfContainedOnly:false },
+    { name:'Wellington TOP 10 (Hutt Park)', coords:[-41.2350,174.9020], type:'holiday-park', selfContainedOnly:false },
+    { name:'Paekākāriki Holiday Park (Kāpiti Coast)', coords:[-40.9700,174.9600], type:'holiday-park', selfContainedOnly:false },
+    { name:'Kāpiti Island lodge (overnight tour only)', coords:[-40.8250,174.9370], link:'https://www.kapitiisland.com/', type:'hut', selfContainedOnly:false },
+  ],
+  'Wairarapa': [
+    { name:'Martinborough TOP 10', coords:[-41.2160,175.4580], type:'holiday-park', selfContainedOnly:false },
+    { name:'Putangirua Pinnacles DOC campsite', coords:[-41.4470,175.2330], link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/wairarapa/places/putangirua-pinnacles-scenic-reserve/things-to-do/putangirua-pinnacles-campsite/', type:'doc-standard', selfContainedOnly:false },
+    { name:'Holdsworth DOC campsite (Tararua road end)', coords:[-40.8960,175.4740], link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/wellington-kapiti/places/tararua-forest-park/things-to-do/campsites/holdsworth-campsite/', type:'doc-standard', selfContainedOnly:false },
+    { name:'Powell Hut (Tararua — check booking rules)', coords:[-40.8820,175.4180], link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/wellington-kapiti/places/tararua-forest-park/things-to-do/huts/powell-hut/', type:'hut', selfContainedOnly:false },
+  ],
+  // South Island additions
+  'Heaphy': [
+    { name:'Perry Saddle Hut (Heaphy — pre-book)', coords:[-40.8780,172.4000], link:'https://www.doc.govt.nz/heaphytrack', type:'hut', selfContainedOnly:false },
+    { name:'Gouland Downs Hut (Heaphy — pre-book)', coords:[-40.8900,172.3500], link:'https://www.doc.govt.nz/heaphytrack', type:'hut', selfContainedOnly:false },
+    { name:'Saxon Hut (Heaphy — pre-book)', coords:[-40.9200,172.3000], link:'https://www.doc.govt.nz/heaphytrack', type:'hut', selfContainedOnly:false },
+    { name:'James Mackay Hut (Heaphy — pre-book)', coords:[-40.9600,172.2400], link:'https://www.doc.govt.nz/heaphytrack', type:'hut', selfContainedOnly:false },
+    { name:'Lewis Hut (Heaphy — pre-book)', coords:[-41.0250,172.1700], link:'https://www.doc.govt.nz/heaphytrack', type:'hut', selfContainedOnly:false },
+    { name:'Heaphy Hut (Heaphy — pre-book)', coords:[-40.9920,172.1100], link:'https://www.doc.govt.nz/heaphytrack', type:'hut', selfContainedOnly:false },
+    { name:'Kōhaihai DOC campsite (Karamea end)', coords:[-41.1040,172.0960], link:'https://www.doc.govt.nz/heaphytrack', type:'doc-standard', selfContainedOnly:false },
+  ],
+  'Karamea': [
+    { name:'Karamea Holiday Park', coords:[-41.2370,172.1080], type:'holiday-park', selfContainedOnly:false },
+    { name:'Kōhaihai DOC campsite (Heaphy end, nīkau palms)', coords:[-41.1040,172.0960], link:'https://www.doc.govt.nz/heaphytrack', type:'doc-standard', selfContainedOnly:false },
+  ],
+  'Westport': [
+    { name:'Kawatiri Beach TOP 10, Westport', coords:[-41.7430,171.5900], type:'holiday-park', selfContainedOnly:false },
+    { name:'Lyell DOC campsite (Old Ghost Road start, SH6)', coords:[-41.7940,172.0470], link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/west-coast/places/mokihinui-river-area/things-to-do/tracks/the-old-ghost-road/', type:'doc-standard', selfContainedOnly:false },
+  ],
+  'Lewis Pass': [
+    { name:'Marble Hill DOC campsite (Springs Junction)', coords:[-42.3710,172.2250], link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/west-coast/places/lewis-pass-scenic-reserve/things-to-do/campsites/marble-hill-campsite/', type:'doc-standard', selfContainedOnly:false },
+    { name:'Kōhanga Atawhai – Manson Nicholls Hut (Lake Daniell)', coords:[-42.3300,172.2500], link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/west-coast/places/lewis-pass-scenic-reserve/things-to-do/huts/kohanga-atawhai-manson-nicholls-hut/', type:'hut', selfContainedOnly:false },
+    { name:'Boyle DOC campsite (St James)', coords:[-42.5220,172.3880], link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/canterbury/places/st-james-conservation-area/things-to-do/campsites/boyle-campsite/', type:'doc-standard', selfContainedOnly:false },
+    { name:'Maruia Hot Springs (lodge)', coords:[-42.3820,172.3380], link:'https://www.maruiahotsprings.nz/', type:'holiday-park', selfContainedOnly:false },
+  ],
+});
+
+
+if (!CAMPSITES['Fox Glacier']) CAMPSITES['Fox Glacier'] = CAMPSITES['Franz Josef'];
+
 // Haversine distance in km between two [lat,lng] points
 function haversine(a, b) {
   const R = 6371;
@@ -1824,6 +2323,12 @@ function getDefaultCampIdx(dayIdx) {
   const zone = acts[acts.length-1].baseZone;
   const sites = getZoneCampsites(zone);
   if (!sites.length) return 0;
+  // Multi-day tracks name their overnight hut/camp explicitly
+  const hint = acts[acts.length-1].campHint;
+  if (hint) {
+    const hi = sites.findIndex(s => s.name.toLowerCase().includes(hint.toLowerCase()));
+    if (hi >= 0) return hi;
+  }
   // Find closest site to last activity coords
   const lastCoords = acts[acts.length-1].coords;
   if (!lastCoords) return 0;
@@ -2066,9 +2571,89 @@ const DRIVE = {
   'Peel Forest':  { 'CHC': 2.0, 'Castle Hill': 1.0, 'Arthurs Pass': 1.5, 'Mackenzie': 0.75, 'Mt Cook': 2.0, 'Wanaka': 4.25, 'Glenorchy': 5.25, 'Queenstown': 5.0, 'Te Anau': 7.75 },
 };
 
+// Extra drive times (hours, zone-to-zone). Wellington ↔ Picton is the Cook Strait
+// ferry: ~3h20–3h45 sailing + ~1h vehicle check-in.
+(function addDriveTimes(){
+  const add = (a, b, h) => { (DRIVE[a] = DRIVE[a] || {})[b] = h; };
+  const E = [
+    // North Island
+    ['Auckland','Whangarei',2.0], ['Auckland','Bay of Islands',3.25], ['Auckland','Far North',5.0], ['Auckland','Kauri Coast',3.25],
+    ['Auckland','Thames',1.25], ['Auckland','Coromandel Town',2.25], ['Auckland','Hahei',2.5], ['Auckland','Tauranga',2.75],
+    ['Auckland','Rotorua',3.0], ['Auckland','Raglan',2.0], ['Auckland','Waitomo',2.5], ['Auckland','Wharepapa',2.25], ['Auckland','Taupo',3.5],
+    ['Whangarei','Bay of Islands',1.0], ['Whangarei','Kauri Coast',1.75],
+    ['Bay of Islands','Far North',2.6], ['Bay of Islands','Kauri Coast',1.75], ['Far North','Kauri Coast',3.75],
+    ['Thames','Coromandel Town',1.0], ['Thames','Hahei',1.25], ['Coromandel Town','Hahei',1.25],
+    ['Thames','Tauranga',1.75], ['Hahei','Tauranga',2.25], ['Thames','Rotorua',2.25],
+    ['Tauranga','Rotorua',1.0], ['Tauranga','Wharepapa',1.5],
+    ['Rotorua','Taupo',1.0], ['Rotorua','East Cape',4.75], ['Rotorua','Gisborne',3.75], ['Rotorua','Waikaremoana',3.5],
+    ['Rotorua','Wharepapa',1.25], ['Rotorua','Waitomo',2.0], ['Rotorua','Tongariro',2.25],
+    ['East Cape','Gisborne',2.75], ['Gisborne','Waikaremoana',2.5], ['Gisborne','Napier',3.0], ['Waikaremoana','Napier',2.75],
+    ['Napier','Taupo',1.75], ['Napier','Wairarapa',3.5], ['Napier','Wellington',4.25],
+    ['Taupo','Tongariro',1.25], ['Taupo','Wharepapa',1.5], ['Taupo','Waitomo',2.25], ['Taupo','Taranaki',3.75], ['Taupo','Wellington',4.75],
+    ['Tongariro','Waitomo',2.0], ['Tongariro','Taranaki',3.75], ['Tongariro','Wellington',4.25], ['Tongariro','Wairarapa',4.0],
+    ['Wharepapa','Waitomo',1.0], ['Wharepapa','Raglan',1.25], ['Raglan','Waitomo',1.25],
+    ['Waitomo','Taranaki',2.5], ['Taranaki','Wellington',4.5], ['Taranaki','Wairarapa',4.75], ['Wairarapa','Wellington',1.25],
+    // Cook Strait ferry (sailing + check-in)
+    ['Wellington','Picton',4.5],
+    // South Island north-west / West Coast / Lewis Pass
+    ['Takaka','Heaphy',1.0], ['Heaphy','Karamea',0.25], ['Takaka','Karamea',6.0],
+    ['Nelson','Karamea',4.5], ['Nelson','Westport',3.25], ['Nelson','Nelson Lakes',1.5], ['Nelson','Picton',2.0], ['Nelson','Blenheim',1.75],
+    ['Nelson Lakes','Westport',2.25], ['Nelson Lakes','Karamea',3.75], ['Nelson Lakes','Lewis Pass',2.25],
+    ['Westport','Karamea',1.5], ['Westport','Punakaiki',0.75], ['Westport','Lewis Pass',2.25], ['Westport','Greymouth',1.5],
+    ['Karamea','Punakaiki',2.25], ['Punakaiki','Lewis Pass',2.5], ['Punakaiki','Greymouth',0.75],
+    ['Greymouth','Hokitika',0.5], ['Greymouth','Arthurs Pass',1.5], ['Greymouth','Lewis Pass',2.0], ['Hokitika','Arthurs Pass',1.5],
+    ['Lewis Pass','Hanmer',1.0], ['Lewis Pass','CHC',2.75],
+  ];
+  E.forEach(([a,b,h]) => add(a,b,h));
+})();
+
+// Zones reached on foot only (never used as a road waypoint when routing)
+const NO_THROUGH_ZONES = new Set(['Heaphy']);
+const _driveCache = {};
+let _driveGraphCache = null;
+function _driveGraph() {
+  if (_driveGraphCache) return _driveGraphCache;
+  const g = {};
+  for (const a of Object.keys(DRIVE)) {
+    for (const [b, h] of Object.entries(DRIVE[a])) {
+      if (h == null) continue;
+      g[a] = g[a] || {}; g[b] = g[b] || {};
+      g[a][b] = Math.min(g[a][b] ?? Infinity, h);
+      g[b][a] = Math.min(g[b][a] ?? Infinity, h);
+    }
+  }
+  return (_driveGraphCache = g);
+}
+
+// Direct table lookup first; otherwise shortest path through the table
+// (so Auckland → Napier, or Taupō → Picton via the ferry, still get a sensible time).
 function getDrive(zoneA, zoneB) {
   if (!zoneA || !zoneB || zoneA === zoneB) return 0;
-  return DRIVE[zoneA]?.[zoneB] ?? DRIVE[zoneB]?.[zoneA] ?? null;
+  const direct = DRIVE[zoneA]?.[zoneB] ?? DRIVE[zoneB]?.[zoneA];
+  if (direct != null) return direct;
+  const key = zoneA + '>' + zoneB;
+  if (key in _driveCache) return _driveCache[key];
+  const g = _driveGraph();
+  const dist = { [zoneA]: 0 };
+  const done = new Set();
+  let res = null;
+  for (;;) {
+    let u = null, best = Infinity;
+    for (const [n, d] of Object.entries(dist)) if (!done.has(n) && d < best) { best = d; u = n; }
+    if (u === null) break;
+    if (u === zoneB) { res = best; break; }
+    done.add(u);
+    if (u !== zoneA && NO_THROUGH_ZONES.has(u)) continue;
+    for (const [v, h] of Object.entries(g[u] || {})) {
+      if (best + h < (dist[v] ?? Infinity)) dist[v] = best + h;
+    }
+  }
+  if (res === null) {
+    const a = BASE_COORDS[zoneA], b = BASE_COORDS[zoneB];
+    res = (a && b) ? Math.round(haversine(a, b) * 1.4 / 70 * 4) / 4 : null;
+  }
+  _driveCache[key] = res;
+  return res;
 }
 
 // ═══════════════════════════════════════════════════════
@@ -2078,8 +2663,8 @@ const ACTIVITIES = [
   // CASTLE HILL / CHC
   { id:'castle-hill', coords:[-43.2057,171.7282], name:'Castle Hill Bouldering', zone:'Castle Hill', baseZone:'Castle Hill', types:['climb'], dist:0, gain:0, actHrs:4, notes:'Iconic limestone boulders. Great arrival-day activity. No shade in afternoon. No gear hire on site.', hard:false, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/canterbury/places/kura-tawhiti-conservation-area/', isNew:false },
   // MT COOK
-  { id:'hooker', coords:[-43.7359,170.0969], name:'Hooker Valley Track', zone:'Mt Cook', baseZone:'Mt Cook', types:['hike'], dist:10, gain:145, actHrs:2.5, notes:'Flat and iconic. Do at sunrise (6am) to beat tour buses. Best used as recovery walk. NOTE: First swing bridge closed Apr 2025 – check status before Mar 2026.', hard:false, rec:false, link:'https://www.doc.govt.nz/hooker-valley-track', isNew:false },
-  { id:'mueller', coords:[-43.7245,170.1003], name:'Mueller Hut Route', zone:'Mt Cook', baseZone:'Mt Cook', types:['hike'], dist:10.5, gain:1045, actHrs:5.5, notes:'Steep alpine route — register at visitor centre. March may have snow above Sealy Tarns. Day walk or overnight ($55/pp, book at huts.co.nz). Can bail at Sealy Tarns (6km, 540m) if conditions poor.', hard:true, rec:true, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/canterbury/places/aoraki-mount-cook-national-park/things-to-do/tracks/mueller-hut-route/', isNew:false },
+  { id:'hooker', coords:[-43.7359,170.0969], name:'Hooker Valley Track', zone:'Mt Cook', baseZone:'Mt Cook', types:['hike'], dist:10, gain:145, actHrs:2.5, notes:'Flat and iconic. Do at sunrise (6am) to beat tour buses. Best used as recovery walk. NOTE: a swing bridge was closed in Apr 2025 — check current status with DOC.', hard:false, rec:false, link:'https://www.doc.govt.nz/hooker-valley-track', isNew:false },
+  { id:'mueller', coords:[-43.7245,170.1003], name:'Mueller Hut Route', zone:'Mt Cook', baseZone:'Mt Cook', types:['hike'], dist:10.5, gain:1045, actHrs:5.5, notes:'Steep alpine route — register at visitor centre. Snow can linger above Sealy Tarns into December. Day walk or overnight ($55/pp, book at huts.co.nz). Can bail at Sealy Tarns (6km, 540m) if conditions poor.', hard:true, rec:true, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/canterbury/places/aoraki-mount-cook-national-park/things-to-do/tracks/mueller-hut-route/', isNew:false },
   { id:'sebastopol', coords:[-43.72,170.095], name:'Sebastopol Bluffs Cragging', zone:'Mt Cook', baseZone:'Mt Cook', types:['climb'], dist:0, gain:0, actHrs:3, notes:'Roadside schist sport climbing at the base of Mt Sebastopol. Friend recommends. Half-day crag option, good after Mueller or as a rest-day activity. Note: camping on the Sebastopol Ridge above is technically illegal — must be concealed if overnight. Sebastopol Bluffs cragging is roadside and open.', hard:false, rec:true, link:'https://climbnz.org.nz/nz/si/wanaka/wanaka/sebastopol-bluffs', isNew:true },
 
   // MT COOK additions
@@ -2090,8 +2675,8 @@ const ACTIVITIES = [
   { id:'upper-hopkins-2', coords:[-43.895,170.425], name:'Upper Hopkins Day 2: Return', zone:'Mt Cook', baseZone:'Mt Cook', types:['hike'], dist:24, gain:400, actHrs:5, driveFromBase:1.0, notes:'Return down Hopkins Valley. Relatively flat — good legs after Day 1. Can detour up to upper valley before heading out. Return to Mt Cook village or continue toward Wānaka.', hard:false, rec:true, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/canterbury/places/ruataniwha-conservation-park/', isNew:true, multiDay:true, multiDayPart:2, multiDayTotal:2, multiDayGroup:'upper-hopkins' },  // WANAKA
   { id:'hospital-flat', coords:[-44.629,169.058], name:'Hospital Flat — Sport Climbing', zone:'Wanaka', baseZone:'Wanaka', types:['climb'], dist:0, gain:0, actHrs:5, driveFromBase:0.5, notes:'Premier Wānaka sport crag on schist. Exposed — avoid in rain. Check access at Basecamp Wānaka gear shop first.', hard:true, rec:false, link:'https://climbnz.org.nz/nz/si/wanaka/wanaka/hospital-flat', isNew:false },
   { id:'roys-peak', coords:[-44.682,169.138], name:"Roy's Peak", zone:'Wanaka', baseZone:'Wanaka', types:['hike'], dist:16, gain:1228, actHrs:4.5, driveFromBase:0.25, notes:'Relentless switchback grind, no shade. Start before 7am to beat crowds. Stunning lake and Southern Alps panorama.', hard:true, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/otago/places/wanaka-area/things-to-do/roys-peak-track/', isNew:false },
-  { id:'rob-roy', coords:[-44.627,168.754], name:'Rob Roy Glacier Track', zone:'Wanaka', baseZone:'Wanaka', types:['hike'], dist:10, gain:450, actHrs:2.75, driveFromBase:1.0, notes:'Beautiful Matukituki Valley, waterfalls and hanging glacier. Check Jucy clearance for river crossing to Raspberry Flat.', hard:false, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/otago/places/mount-aspiring-national-park/things-to-do/tracks/rob-roy-track/', isNew:true },
-  { id:'brewster', coords:[-44.076,169.242], name:'Brewster Hut Track', zone:'Wanaka', baseZone:'Wanaka', types:['hike'], dist:10, gain:1200, actHrs:4.5, driveFromBase:1.25, notes:'Extreme gain/km ratio. Check March snow above 1,400m. On SH6 toward Haast — good morning stop en route west.', hard:true, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/otago/places/mount-aspiring-national-park/things-to-do/tracks/brewster-hut-track/', isNew:true },
+  { id:'rob-roy', coords:[-44.627,168.754], name:'Rob Roy Glacier Track', zone:'Wanaka', baseZone:'Wanaka', types:['hike'], dist:10, gain:450, actHrs:2.75, driveFromBase:1.0, notes:'Beautiful Matukituki Valley, waterfalls and hanging glacier. Check your van’s clearance for the fords to Raspberry Flat.', hard:false, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/otago/places/mount-aspiring-national-park/things-to-do/tracks/rob-roy-track/', isNew:true },
+  { id:'brewster', coords:[-44.076,169.242], name:'Brewster Hut Track', zone:'Wanaka', baseZone:'Wanaka', types:['hike'], dist:10, gain:1200, actHrs:4.5, driveFromBase:1.25, notes:'Extreme gain/km ratio. Check for late snow above 1,400m early in summer. On SH6 toward Haast — good morning stop en route west.', hard:true, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/otago/places/mount-aspiring-national-park/things-to-do/tracks/brewster-hut-track/', isNew:true },
   // GLENORCHY / QT
   { id:'routeburn-run', coords:[-44.8035,168.1315], name:'Routeburn — Harris Saddle Day Run', zone:'Glenorchy', baseZone:'Glenorchy', types:['run'], dist:28, gain:1100, actHrs:7, driveFromBase:0.75, notes:'Run Harris Saddle return (~28km) from the Routeburn Shelter (Glenorchy side). Cannot use huts without paid booking. Carry all food/water/layers.', hard:true, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/fiordland/places/fiordland-national-park/things-to-do/tracks/routeburn-track', isNew:false },
   { id:'earnslaw', coords:[-44.842,168.363], name:'Mt Earnslaw / Sentinel Peak', zone:'Glenorchy', baseZone:'Glenorchy', types:['hike'], dist:8, gain:900, actHrs:4.5, driveFromBase:0.33, notes:'Unmarked above treeline — navigation required. Spectacular Dart Valley views. Far fewer people than anything in Queenstown. Access via Arcadia Station.', hard:true, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/otago/places/glenorchy-area/', isNew:true },
@@ -2100,8 +2685,8 @@ const ACTIVITIES = [
   // FIORDLAND
   { id:'gertrude', coords:[-44.673,167.925], name:'Gertrude Saddle', zone:'Te Anau', baseZone:'Te Anau', types:['hike'], dist:10, gain:700, actHrs:4.5, driveFromBase:1.33, notes:'Arguably the best day hike in Fiordland. No crowds, no booking. Boulder scrambling on upper section. Views directly over Milford Sound. Check DOC for rockfall/avalanche status on Homer Tunnel road.', hard:true, rec:true, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/fiordland/places/fiordland-national-park/things-to-do/tracks/gertrude-saddle-route/', isNew:true },
   { id:'milford-kayak', coords:[-44.673,167.927], name:'Milford Sound — Kayaking', zone:'Te Anau', baseZone:'Te Anau', types:['paddle'], dist:0, gain:0, actHrs:5, driveFromBase:2.5, notes:"Rosco's Milford Kayaks recommended. Half/full-day. Gets you away from cruise ships. Best after rain (waterfall season). Combine with Gertrude Saddle to justify the drive.", hard:false, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/fiordland/places/fiordland-national-park/', isNew:false },
-  { id:'kepler', coords:[-45.414,167.719], name:'KEPLER Day 1: Control Gates → Iris Burn', zone:'Te Anau', baseZone:'Te Anau', types:['hike'], dist:27, gain:800, actHrs:8, driveFromBase:0.08, notes:'PRE-BOOKED: Monday 23 March. ~27km, 800m gain. The ridge from Luxmore to Iris Burn is world-class alpine walking.', hard:true, rec:true, link:'https://www.doc.govt.nz/keplertrack' },
-  { id:'kepler2', coords:[-45.414,167.719], name:'Kepler Day 2: Iris Burn → Control Gates (full loop)', zone:'Te Anau', baseZone:'Te Anau', types:['hike'], dist:30, gain:600, actHrs:7, driveFromBase:0, notes:'Full loop back via Hanging Valley shelter to Control Gates. ~30km, 600m gain, 7h. Big day but completes the circuit. Should be placed on Tue 24 March immediately after Day 1.', hard:true, rec:true, link:'https://www.doc.govt.nz/keplertrack', isNew:false },
+  { id:'kepler', coords:[-45.414,167.719], name:'KEPLER Day 1: Control Gates → Iris Burn', zone:'Te Anau', baseZone:'Te Anau', types:['hike'], dist:27, gain:800, actHrs:8, driveFromBase:0.08, notes:'Great Walk — was booked for the Mar 2026 trip; needs a new booking. ~27km, 800m gain. The ridge from Luxmore to Iris Burn is world-class alpine walking.', hard:true, rec:true, link:'https://www.doc.govt.nz/keplertrack' },
+  { id:'kepler2', coords:[-45.414,167.719], name:'Kepler Day 2: Iris Burn → Control Gates (full loop)', zone:'Te Anau', baseZone:'Te Anau', types:['hike'], dist:30, gain:600, actHrs:7, driveFromBase:0, notes:'Full loop back via Hanging Valley shelter to Control Gates. ~30km, 600m gain, 7h. Big day but completes the circuit. Place immediately after Day 1.', hard:true, rec:true, link:'https://www.doc.govt.nz/keplertrack', isNew:false },
 
   // FIORDLAND — Dusky Track
   { id:'dusky-track', coords:[-45.677,167.396], name:'Dusky Track (multi-day, plan with DOC)', zone:'Te Anau', baseZone:'Te Anau', types:['hike'], dist:84, gain:5000, actHrs:40, notes:"Friend: 'Not a Great Walk but almost as famous — less busy because it's extremely long, muddy and remote and needs proper planning with the DOC office.' 84km, typically 8–10 days. Requires float planes or water taxis. Remote huts. NOT suitable as a casual add-on — requires separate trip planning. Listed here as reference/inspiration only.", hard:true, rec:true, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/fiordland/places/fiordland-national-park/things-to-do/tracks/dusky-track/', isNew:true },  { id:'glowworms', coords:[-45.414,167.719], name:'Te Anau Glowworm Caves', zone:'Te Anau', baseZone:'Te Anau', types:['scenic'], dist:0, gain:0, actHrs:2.5, driveFromBase:0, notes:'Real Journeys guided tour. Best on rest day or bad weather evening. Wilder than Waitomo. Twice daily departures, book ahead.', hard:false, rec:false, link:'https://www.realnz.com/en/experiences/te-anau-glowworm-caves/', isNew:false },
@@ -2115,18 +2700,18 @@ const ACTIVITIES = [
   { id:'wellcome-flat-2', coords:[-43.556,169.955], name:'Wellcome Flat Day 2: Hut → Trailhead', zone:'Haast', baseZone:'Franz Josef', types:['hike','soak'], dist:17, gain:200, actHrs:4, driveFromBase:0.5, notes:'Morning soak in geothermal pools before departing. Return same track. Relatively straightforward return — save legs for West Coast driving day.', hard:false, rec:true, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/west-coast/places/westland-tai-poutini-national-park/things-to-do/tracks/welcome-flat-hut-track/', isNew:true, multiDay:true, multiDayPart:2, multiDayTotal:2, multiDayGroup:'wellcome-flat' },
   { id:'glaciers', coords:[-43.463,170.018], name:'Glacier Valley Walks (Fox & Franz Josef)', zone:'Franz Josef', baseZone:'Franz Josef', types:['scenic'], dist:4, gain:100, actHrs:2, driveFromBase:0, notes:'Valley floor walk to terminus viewpoint ONLY. You cannot walk on the glaciers at all — massive recession and rockfall risk means it is heli-only access now. Friend confirms. Fox to Franz is 25 min on SH6.', hard:false, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/west-coast/places/westland-tai-poutini-national-park/things-to-do/tracks/franz-josef-glacier-ka-roimata-o-hine-hukarere-walk/', isNew:false },
 
-  { id:'fox-peak', coords:[-43.775,170.411], name:'Fox Peak Day Walk', zone:'Franz Josef', baseZone:'Franz Josef', types:['hike'], dist:12, gain:1100, actHrs:5, driveFromBase:1.5, notes:"Friend recommends. Tahr country on the edge of the Southern Alps — far less visited than anything near the glaciers. Route from Opuha River valley. Requires 4WD or high-clearance to access trailhead (check Jucy van ground clearance). Outstanding views of the Main Divide. March conditions generally stable.", hard:true, rec:true, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/canterbury/places/lake-tekapo-area/', isNew:true },  { id:'alex-knob', coords:[-43.388,170.182], name:'Alex Knob Track (Franz Josef)', zone:'Franz Josef', baseZone:'Franz Josef', types:['hike'], dist:17, gain:1200, actHrs:5, driveFromBase:0, notes:'Best alternative to glacier visits. Aerial views of Franz Josef glacier and Southern Alps. Clear weather only — check forecast.', hard:true, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/west-coast/places/westland-tai-poutini-national-park/things-to-do/tracks/alex-knob-track/', isNew:true },
+  { id:'fox-peak', coords:[-43.775,170.411], name:'Fox Peak Day Walk', zone:'Franz Josef', baseZone:'Franz Josef', types:['hike'], dist:12, gain:1100, actHrs:5, driveFromBase:1.5, notes:"Friend recommends. Tahr country on the edge of the Southern Alps — far less visited than anything near the glaciers. Route from Opuha River valley. Requires 4WD or high-clearance to access trailhead (check Jucy van ground clearance). Outstanding views of the Main Divide. Summer conditions generally stable.", hard:true, rec:true, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/canterbury/places/lake-tekapo-area/', isNew:true },  { id:'alex-knob', coords:[-43.388,170.182], name:'Alex Knob Track (Franz Josef)', zone:'Franz Josef', baseZone:'Franz Josef', types:['hike'], dist:17, gain:1200, actHrs:5, driveFromBase:0, notes:'Best alternative to glacier visits. Aerial views of Franz Josef glacier and Southern Alps. Clear weather only — check forecast.', hard:true, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/west-coast/places/westland-tai-poutini-national-park/things-to-do/tracks/alex-knob-track/', isNew:true },
   { id:'mt-brown-1', coords:[-42.774,171.105], name:'Mt Brown Day 1: Hokitika → Mt Brown Hut', zone:'Hokitika', baseZone:'Hokitika', types:['hike'], dist:7, gain:900, actHrs:3, driveFromBase:0.5, notes:"Friend's personal highlight — Magical, I really recommend this one. Steep climb through beech forest to hut at 900m. Outstanding views of Lake Kaniere and coast. Not a DOC hut — carry tent as backup. Very few people." , hard:true, rec:true, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/west-coast/places/hokitika-gorge-scenic-reserve/', isNew:true, multiDay:true, multiDayPart:1, multiDayTotal:2, multiDayGroup:'mt-brown' },
   { id:'mt-brown-2', coords:[-42.774,171.105], name:'Mt Brown Day 2: Styx River Loop → out', zone:'Hokitika', baseZone:'Hokitika', types:['hike'], dist:7, gain:0, actHrs:2.5, driveFromBase:0.5, notes:'Loop descent via Styx River — forest and river scenery. Back to Hokitika by mid-morning, leaves afternoon for West Coast driving.', hard:false, rec:true, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/west-coast/places/hokitika-gorge-scenic-reserve/', isNew:true, multiDay:true, multiDayPart:2, multiDayTotal:2, multiDayGroup:'mt-brown' },
   { id:'paparoa', coords:[-42.117,171.33], name:'Paparoa Track Section + Pancake Rocks', zone:'Punakaiki', baseZone:'Punakaiki', types:['hike','climb'], dist:10, gain:400, actHrs:3.5, driveFromBase:0, notes:"Newest Great Walk (2019). Wild limestone terrain. Pancake Rocks blowhole 30-min loop. Friend recommends the limestone cragging. Ask locally about crag access.", hard:false, rec:true, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/west-coast/places/paparoa-national-park/things-to-do/tracks/pancake-rocks-and-blowholes-walk/', isNew:true },
   // ABEL TASMAN / GOLDEN BAY
-  { id:'at-kayak', coords:[-40.996,173.009], name:'Abel Tasman — Sea Kayaking', zone:'Marahau', baseZone:'Marahau', types:['paddle'], dist:0, gain:0, actHrs:5, driveFromBase:0, notes:'Half/full day from Marahau. Water taxi to Awaroa then paddle back is best route. Warm water in March. Abel Tasman Kayaks or Wilsons AT.', hard:false, rec:false, link:'https://www.abeltasmankayaks.co.nz/', isNew:false },
+  { id:'at-kayak', coords:[-40.996,173.009], name:'Abel Tasman — Sea Kayaking', zone:'Marahau', baseZone:'Marahau', types:['paddle'], dist:0, gain:0, actHrs:5, driveFromBase:0, notes:'Half/full day from Marahau. Water taxi to Awaroa then paddle back is best route. Warmest water of the year in Jan–Feb. Abel Tasman Kayaks or Wilsons AT.', hard:false, rec:false, link:'https://www.abeltasmankayaks.co.nz/', isNew:false },
   { id:'at-walk', coords:[-40.996,173.009], name:'Abel Tasman Coastal Track Run/Walk', zone:'Marahau', baseZone:'Marahau', types:['run','hike'], dist:26, gain:400, actHrs:5, driveFromBase:0, notes:'Marahau → Anchorage → Bark Bay. Check tide times for estuary crossings. Water taxi return from Bark Bay (~$45) if legs are done. Well-surfaced track.', hard:false, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/nelson-tasman/places/abel-tasman-national-park/things-to-do/tracks/abel-tasman-coast-track/', isNew:false },
   { id:'paynes-ford', coords:[-40.914,172.79], name:"Payne's Ford — Climbing + DWS", zone:'Takaka', baseZone:'Takaka', types:['climb'], dist:0, gain:0, actHrs:6, driveFromBase:0.5, notes:"Friend specifically recommends over Abel Tasman. World-class white marble. DWS (deep water solo) in river below — unique. Check nelsonbouldering.co.nz for access.", hard:true, rec:true, link:'https://climbnz.org.nz/nz/si/golden-bay/paynes-ford', isNew:true },
   { id:'golden-bay', coords:[-40.852,172.808], name:"Golden Bay Beaches + Tākaka Town", zone:'Takaka', baseZone:'Takaka', types:['scenic'], dist:0, gain:0, actHrs:4, driveFromBase:0, notes:"Friend: 'The town is lovely.' Pohara/Tata beaches. Cobb Valley day walk from Kahurangi NP nearby. Best rest day in the north.", hard:false, rec:true, link:'https://www.goldenbaynz.co.nz/', isNew:true },
   // KAIKOURA
   { id:'whale-watch', coords:[-42.4,173.681], name:'Whale Watch Kaikōura', zone:'Kaikoura', baseZone:'Kaikoura', types:['wildlife'], dist:0, gain:0, actHrs:3.5, driveFromBase:0, notes:'BOOK WEEKS AHEAD. 95%+ sperm whale sighting rate. Morning departure best (calmer seas). Sea sickness meds the night before. Goes almost every day.', hard:false, rec:false, link:'https://whalewatch.co.nz/', isNew:false },
-  { id:'dolphin', coords:[-42.4,173.681], name:'Dolphin Encounter Kaikōura', zone:'Kaikoura', baseZone:'Kaikoura', types:['wildlife'], dist:0, gain:0, actHrs:3, driveFromBase:0, notes:'In-water swim with dusky dolphins. Departs 6–7am. March water ~14–16°C. Wetsuit provided. Book ahead. Can combine with Peninsula Walk PM.', hard:false, rec:false, link:'https://www.dolphinencounter.co.nz/', isNew:false },
+  { id:'dolphin', coords:[-42.4,173.681], name:'Dolphin Encounter Kaikōura', zone:'Kaikoura', baseZone:'Kaikoura', types:['wildlife'], dist:0, gain:0, actHrs:3, driveFromBase:0, notes:'In-water swim with dusky dolphins. Departs 6–7am. Water stays cold (mid-teens °C) even in summer. Wetsuit provided. Book ahead. Can combine with Peninsula Walk PM.', hard:false, rec:false, link:'https://www.dolphinencounter.co.nz/', isNew:false },
   { id:'kaikoura-peninsula', coords:[-42.4,173.681], name:'Kaikōura Peninsula Walkway', zone:'Kaikoura', baseZone:'Kaikoura', types:['hike'], dist:12, gain:150, actHrs:2.25, driveFromBase:0.08, notes:'Fur seals at Point Kean. Good legs-stretch after a long drive. Best in late afternoon light. Loops around the peninsula with coastal views.', hard:false, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/marlborough/places/kaikoura-area/things-to-do/tracks/kaikoura-peninsula-walkway/', isNew:true },
   // ARTHURS PASS / HANMER
   { id:'avalanche-peak', coords:[-42.947,171.563], name:"Avalanche Peak, Arthur's Pass", zone:'Arthurs Pass', baseZone:'Arthurs Pass', types:['hike'], dist:10, gain:1100, actHrs:5, driveFromBase:0, notes:'One of best day hikes in SI. Only in settled weather. No trail markers above treeline. Scotts Track circuit (different up and down) is best option. Check DOC conditions.', camp:"Arthur's Pass Village DOC Camp ($8/pp)", hard:true, rec:true, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/canterbury/places/arthurs-pass-national-park/things-to-do/tracks/avalanche-peak-route/', isNew:false },
@@ -2202,10 +2787,205 @@ const ACTIVITIES = [
   { id:'mt-arthur-summit', coords:[-41.1630,172.6820], name:'Mt Arthur Summit (1795m)', zone:'Takaka', baseZone:'Takaka', types:['hike'], dist:16, gain:1100, actHrs:4.5, driveFromBase:0.75, notes:'Flora carpark, ~45min from Takaka. 1100m gain through beech forest to bushline then open ridge to 1795m summit. DOC time 6h return; at 0.75× ~4.5h. Views: Golden Bay, Tasman Bay, Nelson Lakes, Southern Alps on a clear day. WEATHER CRITICAL — clear conditions only. If summit is in cloud, Tablelands plateau (same carpark) is an excellent alternative.', hard:true, rec:true, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/nelson-tasman/places/kahurangi-national-park/things-to-do/tracks/mount-arthur-track/', isNew:true },
 ];
 
+
+// ═══════════════════════════════════════════════════════
+// NORTH ISLAND ACTIVITIES (Dec 2026 – Jan 2027 trip)
+// actHrs use your ~0.75× DOC pace for walks; tours use real durations.
+// book:true = needs advance booking (shows in the Book-ahead checklist).
+// Status notes checked Oct 2026 — re-check DOC / operators the week before.
+// ═══════════════════════════════════════════════════════
+const NI_ACTIVITIES = [
+  // ── AUCKLAND ──────────────────────────────────────────
+  { id:'ni-rangitoto', coords:[-36.786,174.860], name:'Rangitoto Island — Summit + Lava Caves', zone:'Auckland', baseZone:'Auckland', types:['hike','scenic'], dist:7, gain:260, actHrs:3.5, driveFromBase:0, notes:'Ferry from downtown Auckland (~25 min) to the Gulf’s youngest volcano (~600 years old). Summit track from the wharf through lava fields and pōhutukawa to the 259m crater rim — DOC ~1h each way — with a side trip to the lava caves (bring a headtorch). No shops or water on the island; check the last ferry back. Good jet-lag shake-out on day 1–2.', hard:false, rec:false, book:true, bookNote:'Fullers360 ferry (summer weekends fill)', link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/auckland/places/rangitoto-island/tracks/rangitoto-summit-track/', isNew:false },
+  { id:'ni-tiritiri', coords:[-36.601,174.889], name:'Tiritiri Matangi — Open Bird Sanctuary', zone:'Auckland', baseZone:'Auckland', types:['wildlife','hike'], dist:6, gain:150, actHrs:7, driveFromBase:0, notes:'One of the best bird islands in the country: takahē, kōkako, tīeke/saddleback, hihi/stitchbird and bellbirds everywhere. Explore Group ferry from downtown (~80 min) or Gulf Harbour (25 min) — runs Wed–Sun + public holidays only, no Mon/Tue sailings. Summer peak timetable from 26 Dec to the 3rd weekend of January. ~4–6h on the island. Add a guided walk by the Supporters of Tiritiri Matangi when you book the ferry. Ferries book out weeks ahead in summer.', hard:false, rec:false, book:true, bookNote:'Explore Group ferry (+ guided walk)', noDays:[1,2], noDaysMsg:'Tiritiri ferry doesn’t sail on Mondays or Tuesdays (except public holidays)', link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/auckland/places/tiritiri-matangi-island/things-to-do/tiritiri-matangi-island-walks/', isNew:false },
+  { id:'ni-piha', coords:[-36.962,174.475], name:'Piha — Mercer Bay Loop + Kitekite Falls', zone:'Auckland', baseZone:'Auckland', types:['hike','scenic'], dist:8, gain:300, actHrs:2.5, driveFromBase:0.75, notes:'West-coast black sand and cliffs. Mercer Bay Loop (2.3 km) runs along the tallest sea cliffs in the Auckland region. Kitekite Falls is open out-and-back only (the Kitekite–Knutzen loop is still closed) — park at the beach and walk up Glenesk Rd (residents-only vehicle access). Lion Rock summit is closed indefinitely. Piha rips are serious — swim between the flags. Scrub boots at every kauri-dieback station.', hard:false, rec:false, link:'https://ourauckland.aucklandcouncil.govt.nz/news/2026/05/auckland-regional-parks-track-repairs-and-updates-may-2026/', isNew:false },
+  { id:'ni-karekare', coords:[-36.989,174.478], name:'Karekare Falls + Zion Hill Loop', zone:'Auckland', baseZone:'Auckland', types:['hike','scenic'], dist:4, gain:200, actHrs:1.5, driveFromBase:0.75, notes:'Short waterfall walk plus the Zion Hill loop above Karekare beach (reported reopened in 2026 after years closed) — The Piano was filmed on this beach. Pairs with Piha the same day. Waitākere closures still change after heavy rain, so check Auckland Council track status first.', hard:false, rec:false, link:'https://ourauckland.aucklandcouncil.govt.nz/news/2026/05/auckland-regional-parks-track-repairs-and-updates-may-2026/', isNew:false },
+  { id:'ni-muriwai', coords:[-36.832,174.424], name:'Muriwai Gannet Colony (Takapu Refuge)', zone:'Auckland', baseZone:'Auckland', types:['wildlife','scenic'], dist:2, gain:50, actHrs:1.5, driveFromBase:0.75, notes:'~1,000+ pairs of Australasian gannets on Ōtakamiro Point, chicks in Dec–Jan. The Maukatia Gannet Track has had repeated storm closures and a 2026 renewal — check status. If the clifftop platforms are shut you still see the colony from the car park and Maukatia Bay. Pair with Lake Wainamu (Bethells). Cape Kidnappers in Hawke’s Bay is the bigger, more dramatic colony.', hard:false, rec:false, link:'https://ourauckland.aucklandcouncil.govt.nz/news/2026/05/auckland-regional-parks-track-repairs-and-updates-may-2026/', isNew:false },
+  { id:'ni-wainamu', coords:[-36.896,174.451], name:'Te Henga / Bethells — Lake Wainamu Dunes', zone:'Auckland', baseZone:'Auckland', types:['hike','run','scenic'], dist:4, gain:80, actHrs:1.5, driveFromBase:0.75, notes:'Black-sand dunes that pour straight into a freshwater lake — run down them and swim. Track open to the lake; the full lake loop has been closed since the 2023 storms. Bethells Beach next door is wilder and quieter than Piha.', hard:false, rec:false, link:'https://ourauckland.aucklandcouncil.govt.nz/news/2026/05/auckland-regional-parks-track-repairs-and-updates-may-2026/', isNew:false },
+  { id:'ni-goat-island', coords:[-36.269,174.797], name:'Goat Island Marine Reserve — Snorkel', zone:'Auckland', baseZone:'Auckland', types:['wildlife'], dist:0, gain:0, actHrs:3, driveFromBase:1.25, notes:'NZ’s first marine reserve (1975). Wade in off the beach and you’re among snapper, blue maomao and kingfish within metres. Snorkel/wetsuit hire nearby; glass-bottom boat if it’s rough. Best on a calm day around mid–high tide. 1h15 north of Auckland — a natural stop on the way to Northland.', hard:false, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/auckland/places/cape-rodney-okakari-point-marine-reserve-goat-island/', isNew:false },
+  { id:'ni-waiheke', coords:[-36.782,174.993], name:'Waiheke Island — Coastal Walk + Vineyards', zone:'Auckland', baseZone:'Auckland', types:['hike','scenic'], dist:10, gain:300, actHrs:5, driveFromBase:0, notes:'40-min ferry from downtown. Walk the coast path from Matiatia round to Oneroa, swim at Onetangi, lunch at a vineyard. Easy, sociable day — good either side of the long Northland drives. Book the ferry and any winery lunch in peak season.', hard:false, rec:false, link:'https://www.fullers.co.nz/', isNew:false },
+  { id:'ni-auckland-rest', coords:[-36.877,174.765], name:'Auckland Rest Day — Maungawhau + Museum', zone:'Auckland', baseZone:'Auckland', types:['scenic'], dist:0, gain:0, actHrs:0, notes:'Sunrise up Maungawhau/Mt Eden crater, Auckland Museum’s Māori & Pacific galleries, Ponsonby for food. Use it to stock up on gas canisters, freeze-dried food and hut supplies before Northland.', hard:false, rec:false, link:'https://www.aucklandnz.com/', isNew:false },
+
+  // ── NORTHLAND: WHANGĀREI ───────────────────────────────
+  { id:'ni-mangawhai', coords:[-36.087,174.597], name:'Mangawhai Cliffs Walkway', zone:'Whangarei', baseZone:'Whangarei', types:['hike','run','scenic'], dist:5, gain:250, actHrs:1.75, driveFromBase:0.9, notes:'One of the best short coastal walks in the north: 3 km clifftop walkway, back 4.8 km along the beach. The beach return is low/mid tide ONLY — DOC says start 2–3h before low tide. DOC 2–3h return. Best as a stop on the Auckland → Whangārei drive (~1h20 from Auckland).', hard:false, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/northland/places/waipu-area/things-to-do/mangawhai-cliffs-walkway/', isNew:false },
+  { id:'ni-waipu-caves', coords:[-35.953,174.355], name:'Waipū Caves — Free Glowworm Cave', zone:'Whangarei', baseZone:'Whangarei', types:['scenic','wildlife'], dist:1, gain:30, actHrs:1.5, driveFromBase:0.6, notes:'Unlit, undeveloped cave with a big glowworm ceiling. Wade a shallow stream; bring a good headtorch and shoes you can get wet, then lights off to see the glowworms. Skip after heavy rain. Free. Just off SH1 south of Whangārei — pairs with Mangawhai.', hard:false, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/northland/places/waipu-area/things-to-do/waipu-caves-track/', isNew:false },
+  { id:'ni-bream-head', coords:[-35.846,174.531], name:'Te Whara / Bream Head Summit', zone:'Whangarei', baseZone:'Whangarei', types:['hike','run'], dist:8, gain:480, actHrs:3, driveFromBase:0.6, notes:'Volcanic pinnacles above Whangārei Heads with views to the Hen & Chickens and Poor Knights. Climb from Urquharts Bay to the summit ridge and back (roughly 4h return at DOC pace, steep and rooty). Mt Manaia nearby (short, all steps) is sacred to local hapū — tread respectfully. Swim at Ocean Beach after.', hard:false, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/northland/places/whangarei-heads-area/bream-head-scenic-reserve/', isNew:false },
+  { id:'ni-poor-knights', coords:[-35.615,174.530], name:'Poor Knights Islands — Snorkel/Kayak Day Boat', zone:'Whangarei', baseZone:'Whangarei', types:['wildlife','paddle'], dist:0, gain:0, actHrs:6, driveFromBase:0.5, notes:'Subtropical marine reserve rated among the world’s great dive sites. Dive! Tutukaka’s “Perfect Day” boat: snorkel, kayak or SUP through arches and into Rikoriko, one of the largest sea caves anywhere. ~1h each way by boat from Tutukaka (30 min from Whangārei). Sells out in Dec–Jan and runs only in OK seas — book early in your Northland window so there’s a backup day.', hard:false, rec:false, book:true, bookNote:'Dive! Tutukaka “Perfect Day”', link:'https://diving.co.nz/poor-knights-islands/perfect-day-ocean-cruise', isNew:false },
+  { id:'ni-abbey-caves', coords:[-35.732,174.362], name:'Abbey Caves + Whangārei Falls', zone:'Whangarei', baseZone:'Whangarei', types:['scenic','hike'], dist:3, gain:60, actHrs:2.5, driveFromBase:0.15, notes:'Three free, unlit limestone caves on the edge of town with glowworms and wading — proper adventure caving: headtorch, old shoes, and avoid after heavy rain. Then Whangārei Falls (26m), 10 min from town, with a short loop to the base.', hard:false, rec:false, isNew:false },
+
+  // ── NORTHLAND: BAY OF ISLANDS ──────────────────────────
+  { id:'ni-cape-brett-1', coords:[-35.240,174.236], name:'Cape Brett Day 1: Rāwhiti → Cape Brett Hut', zone:'Bay of Islands', baseZone:'Bay of Islands', types:['hike'], dist:16.3, gain:1200, actHrs:6, driveFromBase:0.75, notes:'Northland’s best overnight tramp: a switchback ridge out to the old lighthouse-keeper’s house at the tip of the peninsula, with Hole in the Rock below. DOC ~8h one way, constant up-and-down, hot and exposed — carry plenty of water. Shortcut: water taxi to Deep Water Cove leaves ~2–3h to the hut. Needs BOTH a hut booking (no walk-ins) and a walkway permit for the private Māori land between Rāwhiti and Deep Water Cove. Paid secure parking in Rāwhiti.', hard:true, rec:false, book:true, bookNote:'Cape Brett Hut + walkway permit (DOC); water taxi optional', campHint:'Cape Brett Hut', link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/northland/places/cape-brett-and-whangamumu-area/things-to-do/cape-brett-track/', isNew:false, multiDay:true, multiDayPart:1, multiDayTotal:2, multiDayGroup:'cape-brett' },
+  { id:'ni-cape-brett-2', coords:[-35.240,174.236], name:'Cape Brett Day 2: Hut → Rāwhiti', zone:'Bay of Islands', baseZone:'Bay of Islands', types:['hike'], dist:16.3, gain:1200, actHrs:6, driveFromBase:0, notes:'Sunrise from the lighthouse, then the long ridge back (or a pre-booked water taxi from Deep Water Cove). Same terrain in reverse — start early before the heat.', hard:true, rec:false, campHint:'Russell', link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/northland/places/cape-brett-and-whangamumu-area/things-to-do/cape-brett-track/', isNew:false, multiDay:true, multiDayPart:2, multiDayTotal:2, multiDayGroup:'cape-brett' },
+  { id:'ni-urupukapuka', coords:[-35.220,174.230], name:'Urupukapuka Island — Archaeological Walk', zone:'Bay of Islands', baseZone:'Bay of Islands', types:['hike','scenic'], dist:7, gain:250, actHrs:4, driveFromBase:0, notes:'Pest-free island in the outer bay: a loop past pā sites and kūmara pits with views over the whole Bay of Islands, then a swim at Otehei Bay. Ferry from Paihia/Russell. DOC campsites on the island if you want to stay out (book).', hard:false, rec:false, book:true, bookNote:'Island ferry (+ DOC campsite if staying)', link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/northland/places/urupukapuka-island-recreation-reserve/things-to-do/urupukapuka-island-walk/', isNew:false },
+  { id:'ni-waitangi', coords:[-35.269,174.080], name:'Waitangi Treaty Grounds + Haruru Falls Walk', zone:'Bay of Islands', baseZone:'Bay of Islands', types:['scenic','hike'], dist:6, gain:60, actHrs:4, driveFromBase:0, notes:'Where the Treaty of Waitangi was signed in 1840 — the museum, carved meeting house and waka give real context for the rest of the trip (ticket includes a guided tour and cultural performance). Then the mangrove boardwalk to Haruru Falls, or kayak up the river.', hard:false, rec:false, link:'https://www.waitangi.org.nz/', isNew:false },
+  { id:'ni-boi-cruise', coords:[-35.282,174.092], name:'Bay of Islands Cruise — Hole in the Rock + Dolphins', zone:'Bay of Islands', baseZone:'Bay of Islands', types:['wildlife','scenic'], dist:0, gain:0, actHrs:4, driveFromBase:0, notes:'Boat out to Motukōkako (Hole in the Rock) with a good chance of bottlenose and common dolphins. Swimming with dolphins isn’t permitted in the Bay of Islands any more. Several daily trips from Paihia/Russell. Skip it if you walk Cape Brett — you see the Hole from above.', hard:false, rec:false, book:true, bookNote:'Cruise (Explore / Fullers)', link:'https://www.exploregroup.co.nz/', isNew:false },
+  { id:'ni-kerikeri', coords:[-35.216,173.962], name:'Kerikeri — Rainbow Falls + Stone Store', zone:'Bay of Islands', baseZone:'Bay of Islands', types:['hike','run','scenic'], dist:8, gain:80, actHrs:2, driveFromBase:0.4, notes:'Shady riverside track from the Stone Store (NZ’s oldest stone building) to Rainbow Falls (Waianiwaniwa) — swim below the falls. Easy; good on a hot day.', hard:false, rec:false, isNew:false },
+
+  // ── NORTHLAND: FAR NORTH ───────────────────────────────
+  { id:'ni-cape-reinga', coords:[-34.426,172.678], name:'Te Rerenga Wairua / Cape Reinga + Te Werahi Beach', zone:'Far North', baseZone:'Far North', types:['hike','scenic'], dist:9, gain:300, actHrs:3, driveFromBase:0.3, notes:'Where the Tasman meets the Pacific and, in Māori tradition, where spirits leave for Hawaiki — please don’t eat or drink near the lighthouse. Walk the Te Paki Coastal Track from the lighthouse down to Te Werahi Beach and back for cliff and dune views to Cape Maria van Diemen. Go early or late to miss the tour buses. Rentals can’t be driven on Ninety Mile Beach — use SH1.', hard:false, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/northland/places/te-paki-recreation-reserve/things-to-do/tracks/te-paki-coastal-track/', isNew:false },
+  { id:'ni-te-paki-dunes', coords:[-34.511,172.768], name:'Te Paki Giant Dunes — Sandboarding', zone:'Far North', baseZone:'Far North', types:['scenic'], dist:2, gain:150, actHrs:1.5, driveFromBase:0.25, notes:'Huge dunes off Te Paki Stream Rd. Board hire at the car park in summer. Climb, ride, repeat — brutal on the calves. Don’t drive down Te Paki Stream onto the beach in a rental (quicksand, and it voids insurance).', hard:false, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/northland/places/te-paki-recreation-reserve/cape-reinga-te-rerenga-wairua/', isNew:false },
+
+  // ── NORTHLAND: KAURI COAST / HOKIANGA ──────────────────
+  { id:'ni-tane-mahuta', coords:[-35.601,173.528], name:'Waipoua Forest — Tāne Mahuta + Kauri Walks', zone:'Kauri Coast', baseZone:'Kauri Coast', types:['hike','scenic'], dist:3, gain:50, actHrs:1.5, driveFromBase:0.4, notes:'Tāne Mahuta, the largest living kauri (~51m, estimated 1,250–2,500 years old) — boardwalk a few minutes from SH12, open 9am–3pm daily. The Kauri Walks (Te Matua Ngahere, “Father of the Forest”) and the Four Sisters were closed Mar–Oct 2026 for an upgrade and expected to reopen from Oct 2026 — check DOC before you go. Scrub and spray at every station (kauri dieback). For the full experience, book a Footprints Waipoua twilight guided walk.', hard:false, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/northland/places/waipoua-forest/things-to-do/tane-mahuta-walk/', isNew:false },
+  { id:'ni-trounson-kiwi', coords:[-35.722,173.652], name:'Trounson Kauri Park — Night Kiwi Walk', zone:'Kauri Coast', baseZone:'Kauri Coast', types:['wildlife','hike'], dist:2, gain:30, actHrs:1.5, driveFromBase:0, notes:'A predator-controlled “mainland island” — one of the better chances in Northland of hearing or seeing wild brown kiwi. Walk the loop track slowly after dark with a red-filtered torch. Camp at the DOC campsite at the park entrance so you can go out late. Kauri, kererū and glowworms on the banks too.', hard:false, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/northland/places/trounson-kauri-park/things-to-do/trounson-kauri-park-loop-track/', isNew:false },
+  { id:'ni-kai-iwi', coords:[-35.815,173.650], name:'Kai Iwi Lakes — Swim, Paddle, Loop Run', zone:'Kauri Coast', baseZone:'Kauri Coast', types:['paddle','run','scenic'], dist:6, gain:50, actHrs:3, driveFromBase:0.4, notes:'Three dune lakes with white sand and turquoise water — feels tropical. Swim, kayak/SUP, or run the loop around Taharoa. The council campsites book out over New Year.', hard:false, rec:false, isNew:false },
+  { id:'ni-hokianga', coords:[-35.532,173.372], name:'Hokianga — Arai te Uru Walk + Dune Sandboarding', zone:'Kauri Coast', baseZone:'Kauri Coast', types:['hike','scenic'], dist:3, gain:80, actHrs:2, driveFromBase:0.6, notes:'Short heritage walk on South Head with huge views over the Hokianga Harbour bar to the golden North Head dunes; a water taxi from Opononi crosses to the dunes for sandboarding. Opononi is ~35 min north of Waipoua.', hard:false, rec:false, isNew:false },
+
+  // ── COROMANDEL ─────────────────────────────────────────
+  { id:'ni-pinnacles', coords:[-37.089,175.656], name:'The Pinnacles — Kauaeranga Kauri Trail', zone:'Thames', baseZone:'Thames', types:['hike'], dist:14, gain:820, actHrs:5, driveFromBase:0.6, notes:'Historic kauri-logging packhorse track (stone steps most of the way) to Pinnacles Hut, then ladders and rungs to the 759m summit with views over both coasts. DOC: ~3h to the hut + 40 min to the summit; day return 6–7h, or loop back on the Billygoat Track (+~1h, falls and old tramline). Best as an overnight at Pinnacles Hut for summit sunrise (book). The road end is 9 km of gravel past the visitor centre; approach only from Thames — not from the east coast.', hard:true, rec:false, book:true, bookNote:'Pinnacles Hut (only if overnighting)', link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/coromandel/places/coromandel-forest-park/things-to-do/kauaeranga-kauri-trail/', isNew:false },
+  { id:'ni-karangahake', coords:[-37.424,175.721], name:'Karangahake Gorge — Windows Walk + Rail Tunnel', zone:'Thames', baseZone:'Thames', types:['hike','scenic','bike'], dist:7, gain:150, actHrs:2.5, driveFromBase:0.5, notes:'Gold-mining relics in a steep gorge: the Windows Walk through old tramway tunnels with “windows” cut into the cliff (headtorch), swing bridges, then the 1 km rail tunnel on the Hauraki Rail Trail. Hire bikes at Waikino/Paeroa to ride the gorge section. On SH2 between Paeroa and Waihi — a natural stop between Thames and Tauranga.', hard:false, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/bay-of-plenty/places/kaimai-mamaku-conservation-park/things-to-do/tracks/karangahake-windows-walk/', isNew:false },
+  { id:'ni-coastal-walkway', coords:[-36.479,175.391], name:'Coromandel Coastal Walkway — Fletcher Bay ↔ Stony Bay', zone:'Coromandel Town', baseZone:'Coromandel Town', types:['hike','run','bike'], dist:20, gain:500, actHrs:5, driveFromBase:1.25, notes:'The remote tip of the peninsula: farmland and coastal forest with views out to Great Barrier. 10 km each way (~3.5h one way / 7h return at average pace) — very runnable, or ride the MTB variant. Open as of Jul 2026, but storm damage has narrowed some sections and it can close after heavy rain — check first. Gravel beyond Colville: many rental agreements don’t cover it, so check yours (shuttles exist). Camping at Fletcher or Stony Bay avoids driving it twice.', hard:false, rec:false, link:'https://thecoromandel.nz/destinations/coastal-walkway', isNew:false },
+  { id:'ni-new-chums', coords:[-36.703,175.633], name:'New Chums Beach (Wainuiototo)', zone:'Coromandel Town', baseZone:'Coromandel Town', types:['hike','scenic'], dist:3, gain:60, actHrs:1.5, driveFromBase:0.5, notes:'Undeveloped beach regularly listed among the world’s best — no road, no buildings. ~30 min walk from the north end of Whangapoua Beach over rocks and a bush saddle; go around low tide. Pack in, pack out.', hard:false, rec:false, isNew:false },
+  { id:'ni-driving-creek', coords:[-36.752,175.505], name:'Driving Creek Railway (rainy-day option)', zone:'Coromandel Town', baseZone:'Coromandel Town', types:['scenic'], dist:0, gain:0, actHrs:1.5, driveFromBase:0.1, notes:'Quirky narrow-gauge mountain railway built by potter Barry Brickell, climbing through regenerating forest to the “Eyefull Tower”. Rest-day or wet-weather filler; book in summer.', hard:false, rec:false, book:true, bookNote:'Train tickets', isNew:false },
+  { id:'ni-cathedral-cove', coords:[-36.827,175.790], name:'Mautohe Cathedral Cove Walk', zone:'Hahei', baseZone:'Hahei', types:['hike','scenic'], dist:5, gain:150, actHrs:1.5, driveFromBase:0.1, notes:'The famous limestone arch. The main track from the Grange Rd trailhead is open (Aug 2026); the Hahei Beach link is permanently closed and the Gemstone Bay and Stingray Bay side tracks are closed. DOC shuts the cove after heavy rain under its landslide plan, so have a backup. ~1.5h return; you can’t walk through the arch at high tide. Park in Hahei village and walk or shuttle — no parking at the top. Hot and waterless: carry water.', hard:false, rec:false, link:'https://thecoromandel.nz/destinations/cathedral-cove', isNew:false },
+  { id:'ni-cathedral-kayak', coords:[-36.840,175.800], name:'Cathedral Cove Sea Kayak Tour (Marine Reserve)', zone:'Hahei', baseZone:'Hahei', types:['paddle','wildlife'], dist:0, gain:0, actHrs:3, driveFromBase:0, notes:'Paddle Te Whanganui-A-Hei Marine Reserve from Hahei Beach: sea caves, arches and Cathedral Cove from the water, with a snorkel stop. Often better than the walk, and it runs when the track is closed. Half-day guided tours from Hahei; book ahead for Dec–Jan.', hard:false, rec:false, book:true, bookNote:'Guided kayak tour from Hahei', link:'https://thecoromandel.nz/destinations/cathedral-cove', isNew:false },
+  { id:'ni-hot-water-beach', coords:[-36.887,175.824], name:'Hot Water Beach — Dig Your Own Spa', zone:'Hahei', baseZone:'Hahei', types:['soak','scenic'], dist:0, gain:0, actHrs:1.5, driveFromBase:0.2, notes:'Hot water bubbles up through the sand: dig a pool within ~2h either side of low tide (spade hire at the shop). Mobbed at midday — go for an early or evening low tide. Don’t swim here: the rips are among the most dangerous on the coast.', hard:false, rec:false, isNew:false },
+  { id:'ni-tairua', coords:[-37.005,175.865], name:'Tairua — Mt Paku + Broken Hills Gold Tunnel', zone:'Hahei', baseZone:'Hahei', types:['hike','scenic'], dist:4, gain:200, actHrs:2, driveFromBase:0.5, notes:'Mt Paku: a short, steep scramble for the classic Tairua/Pauanui view. Broken Hills (DOC, near Hikuai): riverside camp and an old gold-mining tunnel you walk through by torchlight, with glowworms. Swim in the Tairua River.', hard:false, rec:false, isNew:false },
+
+  // ── BAY OF PLENTY: TAURANGA ────────────────────────────
+  { id:'ni-mauao', coords:[-37.632,176.172], name:'Mauao (Mt Maunganui) Summit + Base Track', zone:'Tauranga', baseZone:'Tauranga', types:['run','hike','scenic'], dist:5, gain:232, actHrs:1.25, driveFromBase:0, notes:'Sunrise up the 232m volcanic cone, a lap of the flat base track, then a swim at Main Beach. Sacred to local iwi — stay on the tracks. Busy from 6am in summer.', hard:false, rec:false, isNew:false },
+  { id:'ni-mclaren-glowworm', coords:[-37.820,176.050], name:'Lake McLaren Glowworm Kayak (evening)', zone:'Tauranga', baseZone:'Tauranga', types:['paddle','wildlife'], dist:0, gain:0, actHrs:3, driveFromBase:0.4, notes:'Guided evening paddle across Lake McLaren into a narrow gorge lit by glowworms — flat water, no experience needed. Waimarino run it most nights in summer; book.', hard:false, rec:false, book:true, bookNote:'Waimarino glowworm kayak', link:'https://glowwormkayaking.com/', isNew:false },
+
+  // ── ROTORUA ────────────────────────────────────────────
+  { id:'ni-redwoods-mtb', coords:[-38.160,176.270], name:'Whakarewarewa Forest (Redwoods) — MTB', zone:'Rotorua', baseZone:'Rotorua', types:['bike'], dist:30, gain:600, actHrs:4, driveFromBase:0.1, notes:'NZ’s best-known mountain-bike forest — a huge network of graded singletrack 5 min from town. Hire bikes at the forest edge and ride green/blue flow trails, or take a shuttle uplift for the gravity trails.', hard:false, rec:false, link:'https://www.rotoruanz.com/', isNew:false },
+  { id:'ni-redwoods-run', coords:[-38.158,176.272], name:'Redwoods Trail Run + Treewalk', zone:'Rotorua', baseZone:'Rotorua', types:['run','scenic'], dist:12, gain:300, actHrs:2, driveFromBase:0.1, notes:'Run the Tarawera Ultra trails through century-old Californian redwoods (loops from the Long Mile Rd car park). Evening: the Redwoods Treewalk / Nightlights suspension bridges among the trunks.', hard:false, rec:false, isNew:false },
+  { id:'ni-waiotapu', coords:[-38.356,176.370], name:'Wai-O-Tapu + Kerosene Creek', zone:'Rotorua', baseZone:'Rotorua', types:['scenic','soak'], dist:4, gain:50, actHrs:3.5, driveFromBase:0.5, notes:'Wai-O-Tapu: Champagne Pool, Artist’s Palette and the lurid green Devil’s Bath — the most colourful thermal park (Lady Knox Geyser is triggered at 10:15am). Then soak in Kerosene Creek, a free hot stream and waterfall pool in the bush nearby — don’t put your head under (amoebic meningitis risk in geothermal water).', hard:false, rec:false, link:'https://www.waiotapu.co.nz/', isNew:false },
+  { id:'ni-tarawera-trail', coords:[-38.213,176.369], name:'Tarawera Trail → Hot Water Beach (water taxi back)', zone:'Rotorua', baseZone:'Rotorua', types:['hike','run','soak'], dist:15, gain:400, actHrs:4.25, driveFromBase:0.25, notes:'Lakeshore bush trail from Te Wairoa car park (15 min from Rotorua) to Hot Water Beach on Lake Tarawera — DOC 5–6h one way, graded advanced. Soak in the thermal shallows at the end (watch for scalding patches), then water taxi back to The Landing — book it. Carry all your water (natural arsenic in local water). Option to camp at the DOC campsite.', hard:false, rec:false, book:true, bookNote:'Water taxi back from Hot Water Beach', link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/bay-of-plenty/places/lake-tarawera-scenic-reserve/things-to-do/tarawera-trail/', isNew:false },
+  { id:'ni-kaituna', coords:[-38.006,176.344], name:'Kaituna River Rafting — Tutea Falls', zone:'Rotorua', baseZone:'Rotorua', types:['paddle'], dist:0, gain:0, actHrs:2.5, driveFromBase:0.4, notes:'Grade 5 run including Tutea Falls (~7m), billed as the highest commercially rafted waterfall in the world. About an hour on the water. Several operators at Okere Falls (Kaituna Cascades, Kaitiaki and others). Book a few days ahead in summer.', hard:false, rec:false, book:true, bookNote:'Rafting trip', link:'https://kaitunacascades.co.nz/', isNew:false },
+  { id:'ni-mt-tarawera', coords:[-38.227,176.513], name:'Mt Tarawera Crater Walk (guided only)', zone:'Rotorua', baseZone:'Rotorua', types:['hike','scenic'], dist:5, gain:250, actHrs:4, driveFromBase:0.75, notes:'Walk the rim of the 1886 eruption rift — a red-and-black moonscape with views over the lakes. The mountain is private Māori land, so access is by guided 4WD tour only. Book ahead.', hard:false, rec:false, book:true, bookNote:'Guided Mt Tarawera tour', link:'https://kaitiaki.co.nz/', isNew:false },
+  { id:'ni-waimangu', coords:[-38.285,176.388], name:'Waimangu Volcanic Valley', zone:'Rotorua', baseZone:'Rotorua', types:['hike','scenic'], dist:4, gain:50, actHrs:2, driveFromBase:0.4, notes:'The world’s youngest geothermal ecosystem, created by the 1886 Tarawera eruption: Frying Pan Lake and the milky-blue Inferno Crater. Mostly downhill walk with a shuttle bus back up. Quieter than the big parks.', hard:false, rec:false, link:'https://www.waimangu.co.nz/', isNew:false },
+  { id:'ni-whakarewarewa', coords:[-38.163,176.253], name:'Whakarewarewa Living Māori Village', zone:'Rotorua', baseZone:'Rotorua', types:['scenic'], dist:1, gain:0, actHrs:2.5, driveFromBase:0, notes:'A lived-in village among the geysers — residents guide you through how they cook and bathe with geothermal heat, plus a cultural performance; Pōhutu Geyser is visible from here. For an evening hāngī and performance, Mitai or Te Pā Tū are the big options (book).', hard:false, rec:false, link:'https://www.whakarewarewa.com/', isNew:false },
+  { id:'ni-rotorua-rest', coords:[-38.138,176.259], name:'Rotorua Rest Day — Polynesian Spa + Kuirau Park', zone:'Rotorua', baseZone:'Rotorua', types:['soak','scenic'], dist:0, gain:0, actHrs:0, notes:'Lakeside hot pools at the Polynesian Spa, free boiling mud and steaming pools in Kuirau Park and Government Gardens. Full recovery day.', hard:false, rec:false, link:'https://www.polynesianspa.co.nz/', isNew:false },
+  { id:'ni-blue-lake', coords:[-38.195,176.326], name:'Tikitapu (Blue Lake) Loop — Run + Swim', zone:'Rotorua', baseZone:'Rotorua', types:['run','hike','paddle'], dist:5.5, gain:80, actHrs:1.25, driveFromBase:0.2, notes:'Easy bush loop around a swimmable lake on the road to Lake Tarawera — ideal recovery run. Kayak/SUP hire on the beach in summer.', hard:false, rec:false, isNew:false },
+  { id:'ni-whirinaki', coords:[-38.660,176.705], name:'Whirinaki Te Pua-a-Tāne — Waterfall Loop', zone:'Rotorua', baseZone:'Rotorua', types:['hike','wildlife'], dist:9, gain:150, actHrs:2.75, driveFromBase:1.5, notes:'Some of the finest podocarp forest left anywhere — giant rimu, mataī, tōtara and kahikatea. DOC ~3.5h easy loop with river views and a waterfall; look for whio (blue duck). Gravel access via Minginui, no reception. Best as a stop on the SH38 route between Rotorua and Lake Waikaremoana.', hard:false, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/east-coast/places/whirinaki-te-pua-a-tane-conservation-park/things-to-do/tracks/whirinaki-waterfall-loop-track/', isNew:false },
+  { id:'ni-hobbiton', coords:[-37.872,175.683], name:'Hobbiton Movie Set Tour', zone:'Rotorua', baseZone:'Rotorua', types:['scenic'], dist:2, gain:30, actHrs:2.5, driveFromBase:0.9, notes:'The Shire: 44 hobbit holes, the Party Tree and a drink at the Green Dragon Inn. Guided tours only and they sell out in Dec–Jan — book well ahead. Matamata is ~50 min from Rotorua or Tauranga, so it fits on a transfer day.', hard:false, rec:false, lotr:true, book:true, bookNote:'Hobbiton tour (sells out)', link:'https://www.hobbitontours.com/', isNew:false },
+
+  // ── TAUPŌ ──────────────────────────────────────────────
+  { id:'ni-huka-trail', coords:[-38.672,176.087], name:'Spa Park → Huka Falls → Aratiatia (run/walk)', zone:'Taupo', baseZone:'Taupo', types:['run','hike','soak'], dist:14, gain:150, actHrs:2.5, driveFromBase:0, notes:'Start with a soak where the free hot Ōtūmuheke Stream meets the Waikato River (Spa Park). Riverside trail to Huka Falls, where the river is squeezed through a narrow chute, and on to Aratiatia Rapids to catch a dam release (10am, 12pm, 2pm, plus 4pm in summer). Craters of the Moon thermal walk is close by.', hard:false, rec:false, isNew:false },
+  { id:'ni-mine-bay', coords:[-38.748,175.985], name:'Ngātoroirangi Mine Bay Rock Carvings — Kayak', zone:'Taupo', baseZone:'Taupo', types:['paddle','scenic'], dist:0, gain:0, actHrs:3.5, driveFromBase:0.2, notes:'Modern Māori carvings (1970s) on the cliffs of Mine Bay, only reachable by water. Guided kayak trips (~3.5–4h incl. a swim) or a sailing cruise from Taupō marina. The lake can get choppy in the afternoon nor’wester.', hard:false, rec:false, book:true, bookNote:'Guided kayak or cruise', isNew:false },
+  { id:'ni-kawakawa-bay', coords:[-38.668,175.852], name:'Kawakawa Bay (Lake Taupō) — Sport & Trad Climbing', zone:'Taupo', baseZone:'Taupo', types:['climb'], dist:10, gain:200, actHrs:6, driveFromBase:0.6, notes:'Rhyolite cliffs dropping into Lake Taupō with single and multi-pitch sport and trad — one of the North Island’s best crags. 5 km west of Kinloch: walk or bike the K2K track (1.5–2h on foot, ~45 min by bike) or come by boat/kayak to carry more gear. Check climbnz.org.nz access notes first. NB: Whanganui Bay, the other big Taupō crag, is only open 30 May–30 Nov — closed during your trip.', hard:true, rec:false, link:'https://climbnz.org.nz/nz/ni/taupo/kawakawa-bay', isNew:false },
+  { id:'ni-great-lake-trail', coords:[-38.664,175.910], name:'Great Lake Trail — Whakaipo → Kinloch (W2K) Ride', zone:'Taupo', baseZone:'Taupo', types:['bike'], dist:28, gain:600, actHrs:3.5, driveFromBase:0.4, notes:'Flowing singletrack above the lake with big views to Tongariro — the classic Great Lake Trail section. Hire bikes and a shuttle in Taupō or Kinloch; finish with a swim at Kinloch.', hard:false, rec:false, isNew:false },
+  { id:'ni-taupo-rest', coords:[-38.686,176.070], name:'Taupō Rest Day — Lake + Hot Pools', zone:'Taupo', baseZone:'Taupo', types:['soak','scenic'], dist:0, gain:0, actHrs:0, notes:'Swim off the lakefront, hot pools at DeBretts or the free Spa Park stream. A useful weather-buffer day before Tongariro — the Crossing needs a settled forecast.', hard:false, rec:false, isNew:false },
+
+  // ── TONGARIRO / RUAPEHU / WHANGANUI RIVER ──────────────
+  { id:'ni-tac', coords:[-39.144,175.583], name:'Tongariro Alpine Crossing', zone:'Tongariro', baseZone:'Tongariro', types:['hike','run'], dist:19.4, gain:830, actHrs:5.75, driveFromBase:0.5, notes:'NZ’s most famous day walk: Mangatepopo valley → Red Crater (1,886m) → Emerald and Blue Lakes → down to Ketetahi. 19.4 km one way, DOC 7–8h in summer, ±1,196m of elevation change. No parking for walkers at Mangatepopo in summer — take a shuttle (from National Park, Whakapapa, Tūrangi, Taupō or Ohakune) and make the free DOC booking, which shuttles require. Ngāuruhoe is Mount Doom. Iwi ask you to respect the maunga tapu: don’t touch or enter any of the lakes or streams. The 2025 fire burn area near the start is under a 10-year rāhui — stay on the track. Go only on a settled forecast and start early. An international-visitor fee is planned from late 2027 (not yet).', hard:true, rec:false, lotr:true, book:true, bookNote:'Free DOC Crossing booking + shuttle', link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/central-north-island/places/tongariro-national-park/things-to-do/tracks/tongariro-alpine-crossing/', isNew:false },
+  { id:'ni-tama-lakes', coords:[-39.200,175.543], name:'Tama Lakes + Taranaki Falls', zone:'Tongariro', baseZone:'Tongariro', types:['hike','run'], dist:17, gain:450, actHrs:4.25, driveFromBase:0, notes:'From Whakapapa Village past Taranaki Falls and across open tussock to the explosion-crater lakes between Ruapehu and Ngāuruhoe. DOC 5–6h return to Lower Tama; the Upper Tama lookout adds 1.4 km/35 min each way (steep and windy). A brilliant alternative if the Crossing is booked out or heaving.', hard:false, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/central-north-island/places/tongariro-national-park/things-to-do/tracks/tama-lakes-track/', isNew:false },
+  { id:'ni-taranaki-falls', coords:[-39.200,175.543], name:'Taranaki Falls Loop (short)', zone:'Tongariro', baseZone:'Tongariro', types:['hike','run'], dist:6, gain:150, actHrs:1.5, driveFromBase:0, notes:'Loop from Whakapapa Village to a 20m waterfall pouring off an old lava flow. Easy recovery outing or evening leg-stretch.', hard:false, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/central-north-island/places/tongariro-national-park/things-to-do/tracks/taranaki-falls-walking-track/', isNew:false },
+  { id:'ni-silica-rapids', coords:[-39.199,175.541], name:'Silica Rapids Loop', zone:'Tongariro', baseZone:'Tongariro', types:['hike','run'], dist:7, gain:200, actHrs:1.75, driveFromBase:0, notes:'Beech forest and creamy-white alumino-silicate terraces below Ruapehu; DOC 2.5h loop back via Bruce Rd. Good on a cloudy day.', hard:false, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/central-north-island/places/tongariro-national-park/things-to-do/tracks/silica-rapids-walking-track/', isNew:false },
+  { id:'ni-ruapehu-crater', coords:[-39.234,175.557], name:'Mt Ruapehu — Crater Lake Route', zone:'Tongariro', baseZone:'Tongariro', types:['hike'], dist:10, gain:1050, actHrs:5.5, driveFromBase:0.25, notes:'Unmarked alpine route from the top of Bruce Rd (Iwikau Village) up the ski field and Dome Ridge to look into the steaming crater lake of the North Island’s highest volcano (viewpoint 2,672m). ~7h/10 km return on foot, or ~5h/7 km if the Sky Waka gondola is running to Knoll Ridge. Rough volcanic rock in summer; snow and ice possible into December; navigation needed in cloud. Don’t descend into the crater. Check the GeoNet volcanic alert level and conditions first — guided options run from National Park Village.', hard:true, rec:false, link:'https://www.nationalpark.co.nz/activity/mount-ruapehu-crater-climb', isNew:false },
+  { id:'ni-waitonga-mangawhero', coords:[-39.300,175.510], name:'Ohakune Mountain Rd — Waitonga + Mangawhero Falls', zone:'Tongariro', baseZone:'Tongariro', types:['hike','scenic'], dist:5, gain:150, actHrs:1.75, driveFromBase:0.75, notes:'Waitonga Falls (Ruapehu’s highest waterfall) via boardwalks over alpine bog with the mountain reflected in the tarns, plus Mangawhero Falls — where Gollum caught his fish in The Two Towers. Both are on the Ohakune Mountain Rd.', hard:false, rec:false, lotr:true, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/central-north-island/places/tongariro-national-park/things-to-do/tracks/waitonga-falls-track', isNew:false },
+  { id:'ni-old-coach-road', coords:[-39.350,175.380], name:'Old Coach Road — Horopito → Ohakune (bike)', zone:'Tongariro', baseZone:'Tongariro', types:['bike','hike'], dist:15, gain:200, actHrs:2.5, driveFromBase:0.6, notes:'Historic cobbled coach road through old-growth rimu forest and over the Hapuawhenua viaduct, mostly downhill to Ohakune. Bike hire and shuttles in Ohakune. Easy, fun rest-ish day.', hard:false, rec:false, isNew:false },
+  { id:'ni-whanganui-1', coords:[-39.108,175.065], name:'Whanganui Journey Day 1: Whakahoro → John Coull Hut', zone:'Tongariro', baseZone:'Tongariro', types:['paddle'], dist:37, gain:0, actHrs:7.5, driveFromBase:0, notes:'The Great Walk that’s a paddle: 3 days / 88 km down the Whanganui River through deep bush gorges, Grade II rapids at most. Canoe hire, gear barrels and drop-off/pick-up from operators in National Park, Ohakune, Taumarunui or Raetihi (shuttle time included in hours). Huts/campsites must be booked in the Great Walk season (1 Oct – 30 Apr). Day 1 is the longest stretch.', hard:false, rec:false, book:true, bookNote:'Great Walk huts/campsites (DOC) + canoe hire & transport', campHint:'John Coull', link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/manawatu-whanganui/places/whanganui-national-park/things-to-do/tracks/whanganui-journey/', isNew:false, multiDay:true, multiDayPart:1, multiDayTotal:3, multiDayGroup:'whanganui' },
+  { id:'ni-whanganui-2', coords:[-39.342,174.972], name:'Whanganui Journey Day 2: John Coull → Tīeke Kāinga (+ Bridge to Nowhere)', zone:'Tongariro', baseZone:'Tongariro', types:['paddle','hike'], dist:30, gain:100, actHrs:6.5, driveFromBase:0, notes:'Gorges and waterfalls, then stop at Mangapurua Landing for the 3 km (≈90 min return) walk to the Bridge to Nowhere. Night at Tīeke Kāinga, a marae as well as a hut — follow the hosts’ tikanga.', hard:false, rec:false, campHint:'Tīeke', link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/manawatu-whanganui/places/whanganui-national-park/things-to-do/tracks/whanganui-journey/', isNew:false, multiDay:true, multiDayPart:2, multiDayTotal:3, multiDayGroup:'whanganui' },
+  { id:'ni-whanganui-3', coords:[-39.479,175.039], name:'Whanganui Journey Day 3: Tīeke → Pipiriki', zone:'Tongariro', baseZone:'Tongariro', types:['paddle'], dist:21, gain:0, actHrs:5, driveFromBase:0, notes:'Shorter final day with the biggest (still modest) rapids, finishing at Pipiriki; the operator shuttles you back to base (included in hours).', hard:false, rec:false, campHint:'Ohakune', link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/manawatu-whanganui/places/whanganui-national-park/things-to-do/tracks/whanganui-journey/', isNew:false, multiDay:true, multiDayPart:3, multiDayTotal:3, multiDayGroup:'whanganui' },
+  { id:'ni-bridge-to-nowhere', coords:[-39.479,175.039], name:'Bridge to Nowhere — Jet Boat + Walk from Pipiriki', zone:'Tongariro', baseZone:'Tongariro', types:['scenic','hike'], dist:6, gain:100, actHrs:4, driveFromBase:1.25, notes:'If you’re not doing the river journey: jet boat up the Whanganui from Pipiriki to Mangapurua Landing, then a 3 km (≈90 min return) walk to the 1936 concrete bridge left behind by a failed soldier settlement. ~1h15 from Ohakune via Raetihi; the Pipiriki road is narrow and winding.', hard:false, rec:false, book:true, bookNote:'Jet boat from Pipiriki', link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/manawatu-whanganui/places/whanganui-national-park/things-to-do/tracks/bridge-to-nowhere-walk/', isNew:false },
+  { id:'ni-tnc', coords:[-39.200,175.543], name:'Tongariro Northern Circuit (multi-day — plan with DOC)', zone:'Tongariro', baseZone:'Tongariro', types:['hike'], dist:43, gain:1600, actHrs:20, driveFromBase:0, notes:'3–4 day loop around Ngāuruhoe taking in the Crossing plus Oturere’s lava desert and Waihohonu Hut. 2026/27 caveats: Oturere Hut has been under replacement and the Whakapapa → Mangatepopo section is closed for the 2026/27 season after the 2025 fire, so the route and start differ from the classic loop — check what DOC has open and bookable. Reference entry; schedule the day legs as custom activities.', hard:true, rec:false, book:true, bookNote:'Great Walk huts (DOC)', link:'https://www.doc.govt.nz/tongarironortherncircuit', isNew:false },
+
+  // ── TARANAKI ───────────────────────────────────────────
+  { id:'ni-pouakai-crossing', coords:[-39.270,174.100], name:'Pouākai Crossing', zone:'Taranaki', baseZone:'Taranaki', types:['hike','run'], dist:19, gain:1000, actHrs:6.25, driveFromBase:0.5, notes:'Arguably a better day than the Tongariro Crossing and far quieter: under the Dieffenbach Cliffs, past Bells Falls, across the Ahukawakawa wetland and over the Pouākai Range to the tarns with Taranaki reflected in them. 19 km one way, DOC 7.5–9.5h; less climbing walking North Egmont → Mangorei Rd. Book a shuttle. Parking at North Egmont is limited until ~Dec 2026 (new visitor centre build) and there’s no freedom camping there. Weather on the maunga turns fast.', hard:true, rec:false, book:true, bookNote:'Shuttle North Egmont ↔ Mangorei Rd', link:'https://www.doc.govt.nz/pouakai-crossing', isNew:false },
+  { id:'ni-pouakai-tarns', coords:[-39.185,174.118], name:'Pouākai Tarns at Sunrise (Mangorei Track)', zone:'Taranaki', baseZone:'Taranaki', types:['hike'], dist:11, gain:700, actHrs:3.75, driveFromBase:0.35, notes:'The postcard shot: Taranaki mirrored in an alpine tarn. Mangorei Track is ~2.5h one way of steps and boardwalk to Pouākai Hut; the tarns are 700m beyond. For sunrise, start around 3am or stay at Pouākai Hut (34 bunks, must be booked). ~20 min from New Plymouth.', hard:false, rec:false, book:true, bookNote:'Pouākai Hut (optional overnight)', link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/taranaki/places/te-papa-kura-o-taranaki/things-to-do/tracks/mangorei-track/', isNew:false },
+  { id:'ni-taranaki-summit', coords:[-39.270,174.099], name:'Taranaki Maunga Summit (2,518m)', zone:'Taranaki', baseZone:'Taranaki', types:['hike'], dist:12.6, gain:1572, actHrs:7, driveFromBase:0.5, notes:'A big, serious day: 6.3 km and 1,572m up from North Egmont (DOC 8–10h return). Scoria scree, the Lizard ridge, then the crater, where ice lingers — DOC expects ice into Nov/Dec and recommends Jan–Apr for non-mountaineers, so late Dec / early Jan is borderline: ask the visitor centre and carry crampons + ice axe if advised. Set a turnaround time, leave intentions, carry a PLB. Iwi request: don’t stand on the summit peak itself, and no camping, cooking, toileting or litter in the summit area.', hard:true, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/taranaki/places/te-papa-kura-o-taranaki/things-to-do/tracks/taranaki-maunga-summit-climb/', isNew:false },
+  { id:'ni-dawson-wilkies', coords:[-39.326,174.103], name:'Dawson Falls + Wilkies Pools Loop', zone:'Taranaki', baseZone:'Taranaki', types:['hike','scenic'], dist:4, gain:150, actHrs:1.5, driveFromBase:1.0, notes:'“Goblin forest” of moss-draped kāmahi, the smooth lava-carved Wilkies Pools and Dawson Falls on the south-east side of the maunga. Short and atmospheric — good in drizzle.', hard:false, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/taranaki/places/te-papa-kura-o-taranaki/things-to-do/tracks/wilkies-pools-loop-track/', isNew:false },
+  { id:'ni-np-coastal', coords:[-39.036,174.122], name:'New Plymouth Coastal Walkway → Te Rewa Rewa Bridge', zone:'Taranaki', baseZone:'Taranaki', types:['run','bike','scenic'], dist:13, gain:50, actHrs:2, driveFromBase:0, notes:'Seafront path to the Te Rewa Rewa bridge, which frames the maunga like a whale skeleton. Run it or hire bikes; add Pukekura Park and the Len Lye Centre for an easy recovery day.', hard:false, rec:false, isNew:false },
+
+  // ── WAITOMO / WHAREPAPA / RAGLAN ───────────────────────
+  { id:'ni-black-water', coords:[-38.270,175.080], name:'Black Water Rafting — Ruakuri Cave', zone:'Waitomo', baseZone:'Waitomo', types:['paddle','scenic'], dist:0, gain:0, actHrs:3, driveFromBase:0.1, notes:'Wetsuit, helmet and inner tube down an underground river under a ceiling of glowworms — the classic Waitomo adventure (Black Labyrinth ~3h). Black Abyss (~5h) adds an abseil, flying fox and climbing. Book ahead.', hard:false, rec:false, book:true, bookNote:'Legendary Black Water Rafting', link:'https://www.waitomo.com/black-water-rafting/legendary-black-water-rafting-co-black-labyrinth', isNew:false },
+  { id:'ni-ruakuri-night', coords:[-38.270,175.080], name:'Ruakuri Walk at Night (free glowworms)', zone:'Waitomo', baseZone:'Waitomo', types:['hike','wildlife'], dist:1, gain:40, actHrs:0.75, driveFromBase:0, notes:'Short DOC loop through a limestone gorge with tunnels and natural bridges — after dark the banks glow with glowworms (red torch, lights off). Free, and nearly as good as the paid caves.', hard:false, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/waikato/places/waitomo-area/tracks/ruakuri-walk/', isNew:false },
+  { id:'ni-marokopa', coords:[-38.256,174.889], name:'Te Anga Rd — Mangapohue Bridge, Piripiri Cave, Marokopa Falls', zone:'Waitomo', baseZone:'Waitomo', types:['hike','scenic'], dist:3, gain:80, actHrs:1.75, driveFromBase:0.75, notes:'Three short DOC stops west of Waitomo: a towering limestone natural bridge with fossil oysters, a cave you can walk into with a torch, and the 35m curtain of Marokopa Falls. Continue to the black-sand coast at Marokopa if you have time.', hard:false, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/waikato/places/waitomo-area/tracks/marokopa-falls-walk/', isNew:false },
+  { id:'ni-froggatt', coords:[-38.156,175.524], name:'Wharepapa South — Froggatt Edge Sport Climbing', zone:'Wharepapa', baseZone:'Wharepapa', types:['climb'], dist:0, gain:0, actHrs:6, driveFromBase:0.1, notes:'The North Island’s climbing heartland: pocketed ignimbrite sport routes on farmland outcrops, from easy to very hard. Froggatt Edge is the classic crag. Access is subject to conditions (private farmland) — check climbnz.org.nz and sign in where asked. Summer can be hot: climb shady walls or mornings.', hard:true, rec:false, link:'https://climbnz.org.nz/nz/ni/wharepapa/froggatt-edge', isNew:false },
+  { id:'ni-waipari', coords:[-38.157,175.524], name:'Waipari Crag (Wharepapa)', zone:'Wharepapa', baseZone:'Wharepapa', types:['climb'], dist:0, gain:0, actHrs:5, driveFromBase:0.1, notes:'Heavily pocketed ignimbrite, well bolted across the grades — home to some of the North Island’s hardest routes but plenty for everyone. Sign in at the farm gate on Whatauri Rd; bring a 50–60m rope. Pair with Froggatt Edge for a two-day climbing stop.', hard:false, rec:false, link:'https://climbnz.org.nz/nz/ni/wharepapa/froggatt-edge', isNew:false },
+  { id:'ni-maungatautari', coords:[-38.064,175.573], name:'Sanctuary Mountain Maungatautari', zone:'Wharepapa', baseZone:'Wharepapa', types:['wildlife','hike'], dist:4, gain:100, actHrs:3, driveFromBase:0.5, notes:'3,400 ha of forest inside a 47 km predator-proof fence. The southern enclosure has takahē, kākā, kākāriki and tuatara, plus a walk-through aviary; guided night/kiwi tours on some evenings (book).', hard:false, rec:false, link:'https://www.sanctuarymountain.co.nz/', isNew:false },
+  { id:'ni-raglan-surf', coords:[-37.824,174.815], name:'Raglan — Surf Lesson / Surf Session', zone:'Raglan', baseZone:'Raglan', types:['paddle'], dist:0, gain:0, actHrs:3, driveFromBase:0.1, notes:'Famous left-hand point breaks (Manu Bay, Whale Bay, Indicators) for good surfers; Ngarunui Beach for lessons with the local surf schools (board + wetsuit included). Laid-back town for a rest-ish day.', hard:false, rec:false, book:true, bookNote:'Surf lesson', isNew:false },
+  { id:'ni-karioi', coords:[-37.860,174.795], name:'Mt Karioi Summit', zone:'Raglan', baseZone:'Raglan', types:['hike','run'], dist:9, gain:650, actHrs:4, driveFromBase:0.4, notes:'Steep, rooty climb to the 756m peak above Raglan with coast views (to Taranaki on a clear day). Routes from Te Toto Gorge or the south side — check the DOC page for the current track condition.', hard:false, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/waikato/places/karioi-area/tracks/karioi-track/', isNew:false },
+  { id:'ni-bridal-veil', coords:[-37.890,174.880], name:'Waireinga / Bridal Veil Falls', zone:'Raglan', baseZone:'Raglan', types:['hike','scenic'], dist:1.5, gain:60, actHrs:0.75, driveFromBase:0.35, notes:'55m plunge over basalt into a pool; platforms at the top and steps down to the base. ~20 min from Raglan.', hard:false, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/waikato/places/raglan-area/tracks/waireinga-bridal-veil-falls/', isNew:false },
+
+  // ── HAWKE’S BAY ───────────────────────────────────────
+  { id:'ni-gannet-safari', coords:[-39.645,177.092], name:'Cape Kidnappers Gannets — Gannet Safaris Overland', zone:'Napier', baseZone:'Napier', types:['wildlife','scenic'], dist:1, gain:0, actHrs:3, driveFromBase:0.5, notes:'The world’s largest accessible mainland gannet colony, reached by 4WD across Cape Kidnappers Station to the plateau — you stand metres from nesting birds. ~3h, departs Clifton daily Sep–Apr (9am & 1:30pm). Chicks in Dec–Feb. Book ahead.', hard:false, rec:false, book:true, bookNote:'Gannet Safaris Overland', link:'https://www.napiernz.com/activities/gannet-safaris/', isNew:false },
+  { id:'ni-kidnappers-walk', coords:[-39.634,177.005], name:'Cape Kidnappers Beach Walk (tidal, high-risk)', zone:'Napier', baseZone:'Napier', types:['hike','wildlife'], dist:19, gain:100, actHrs:5, driveFromBase:0.5, notes:'Self-guided beach walk from Clifton under 100m cliffs to the colony. DOC: leave no sooner than 3h after high tide, be back by 1.5h after low, and allow 5h+. DOC is blunt that ~7 km has a significant, sometimes fatal, landslide/rockfall risk and the track status can change any day — read the DOC safety alert before going. The overland tour is the low-risk alternative.', hard:false, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/hawkes-bay/places/cape-kidnappers-gannet-reserve/', isNew:false },
+  { id:'ni-te-mata', coords:[-39.700,176.907], name:'Te Mata Peak — Sunrise Walk/Run', zone:'Napier', baseZone:'Napier', types:['hike','run','bike'], dist:8, gain:350, actHrs:2, driveFromBase:0.5, notes:'399m limestone ridge above Havelock North with views across the plains to Ruapehu. Te Mata Park has a network of walking/running and MTB trails through redwoods and grassland — or drive up for sunset.', hard:false, rec:false, isNew:false },
+  { id:'ni-hb-trails', coords:[-39.634,176.980], name:'Hawke’s Bay Trails — Coast + Wineries Ride', zone:'Napier', baseZone:'Napier', types:['bike','scenic'], dist:35, gain:100, actHrs:4, driveFromBase:0.3, notes:'Flat, easy cycle trails along the coast and between vineyards. Bike hire with drop-off; lunch at a winery. Good recovery day after Te Urewera.', hard:false, rec:false, isNew:false },
+  { id:'ni-napier-rest', coords:[-39.490,176.918], name:'Napier Rest Day — Art Deco + Marine Parade', zone:'Napier', baseZone:'Napier', types:['scenic'], dist:0, gain:0, actHrs:0, notes:'Napier was rebuilt in Art Deco after the 1931 earthquake — self-guided walk or a guided tour, then the Marine Parade. Restock before heading inland.', hard:false, rec:false, isNew:false },
+
+  // ── TE UREWERA: LAKE WAIKAREMOANA ──────────────────────
+  { id:'ni-waikaremoana-1', coords:[-38.802,177.053], name:'Lake Waikaremoana Day 1: Onepoto → Panekire Hut', zone:'Waikaremoana', baseZone:'Waikaremoana', types:['hike'], dist:9, gain:650, actHrs:3.75, driveFromBase:0, notes:'Great Walk around the “sea of rippling waters”: 46 km, 3–4 days. Day 1 is the big climb onto the Panekire Bluff with views over the whole lake (DOC ~5h). Huts and campsites must be booked year-round and Tūhoe wardens check bookings in peak season. The track is one-way with ends ~30 km apart — book a water taxi/shuttle. Te Urewera is cared for by Ngāi Tūhoe (Te Uru Taumatua) and is a legal person in its own right.', hard:false, rec:false, book:true, bookNote:'Great Walk huts/campsites + water taxi/shuttle', campHint:'Panekire', link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/east-coast/places/te-urewera/things-to-do/tracks/lake-waikaremoana-great-walk/', isNew:false, multiDay:true, multiDayPart:1, multiDayTotal:3, multiDayGroup:'waikaremoana' },
+  { id:'ni-waikaremoana-2', coords:[-38.756,176.985], name:'Lake Waikaremoana Day 2: Panekire → Waiopaoa → Marauiti', zone:'Waikaremoana', baseZone:'Waikaremoana', types:['hike'], dist:20, gain:200, actHrs:5.5, driveFromBase:0, notes:'Long descent off the bluff then lakeshore bays through old forest (distances approximate — check DOC’s hut-to-hut times). Swims at every beach. Split at Waiopaoa Hut if you prefer the 4-day version.', hard:false, rec:false, campHint:'Marauiti', link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/east-coast/places/te-urewera/things-to-do/tracks/lake-waikaremoana-great-walk/', isNew:false, multiDay:true, multiDayPart:2, multiDayTotal:3, multiDayGroup:'waikaremoana' },
+  { id:'ni-waikaremoana-3', coords:[-38.730,177.080], name:'Lake Waikaremoana Day 3: Marauiti → Hopuruahine', zone:'Waikaremoana', baseZone:'Waikaremoana', types:['hike'], dist:17, gain:300, actHrs:4.5, driveFromBase:0, notes:'Undulating lakeside forest to the Hopuruahine road end (or a pre-booked water taxi pick-up). Back to Home Bay for a hot shower.', hard:false, rec:false, campHint:'Waikaremoana Holiday Park', link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/east-coast/places/te-urewera/things-to-do/tracks/lake-waikaremoana-great-walk/', isNew:false, multiDay:true, multiDayPart:3, multiDayTotal:3, multiDayGroup:'waikaremoana' },
+  { id:'ni-panekire-day', coords:[-38.802,177.053], name:'Panekire Bluffs Day Walk (from Onepoto)', zone:'Waikaremoana', baseZone:'Waikaremoana', types:['hike','run'], dist:12, gain:650, actHrs:4.5, driveFromBase:0.25, notes:'If you skip the full Great Walk: climb the first section onto the Panekire Bluff lookouts and back — the best views on the lake. Day walks on the Great Walk need no booking or fee.', hard:false, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/east-coast/places/te-urewera/things-to-do/tracks/panekire-bluffs/', isNew:false },
+  { id:'ni-waikareiti', coords:[-38.763,177.100], name:'Lake Waikareiti Walk + Short Falls Walks', zone:'Waikaremoana', baseZone:'Waikaremoana', types:['hike','scenic'], dist:8, gain:250, actHrs:2.25, driveFromBase:0.1, notes:'Beech-forest climb to the clear, island-dotted Lake Waikareiti above the main lake, plus the short Aniwaniwa and Papakorito falls walks. Remote: no fuel and few supplies — fill up in Wairoa or Murupara. SH38 is slow and winding, with ~27 km still unsealed between Aniwaniwa and Mangapapa (last reported) — check your rental terms.', hard:false, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/east-coast/places/te-urewera/things-to-do/tracks/lake-waikareiti-walk/', isNew:false },
+
+  // ── TAIRĀWHITI: GISBORNE & EAST CAPE ───────────────────
+  { id:'ni-rere', coords:[-38.532,177.627], name:'Rere Rockslide + Rere Falls', zone:'Gisborne', baseZone:'Gisborne', types:['scenic'], dist:1, gain:20, actHrs:2, driveFromBase:0.9, notes:'60m natural rock waterslide on the Wharekōpae River — bring a boogie board or tube and expect bruises. Rere Falls, a wide curtain of water, is just downstream. ~50 min inland from Gisborne. Best when the river is low.', hard:false, rec:false, link:'https://www.nzherald.co.nz/travel/rere-rockslide-amazing-natural-waterslide-is-free-and-in-new-zealand/VOXL4CCFZC6ZWA36DHCOZ2BFFI/', isNew:false },
+  { id:'ni-cooks-cove', coords:[-38.385,178.325], name:'Tolaga Bay Wharf + Cook’s Cove Walkway', zone:'Gisborne', baseZone:'Gisborne', types:['hike','scenic'], dist:5.8, gain:150, actHrs:1.75, driveFromBase:0.8, notes:'Walk NZ’s longest wharf (660m), then the farmland/coastal walkway to Cook’s Cove, where the Endeavour anchored in 1769, and the “Hole in the Wall” arch. 5.8 km return, ~2–2.5h, lookout at 120m. Closed 1 Aug – Labour Weekend for lambing — open in Dec/Jan.', hard:false, rec:false, link:'https://exploregisborne.co.nz/cooks-cove-walkway-explore-uawatolaga-bays-historic-doc-track/', isNew:false },
+  { id:'ni-east-cape-lh', coords:[-37.689,178.548], name:'East Cape Lighthouse at Sunrise', zone:'East Cape', baseZone:'East Cape', types:['hike','scenic'], dist:2, gain:150, actHrs:1.5, driveFromBase:0.5, notes:'Climb 700-odd steps to the lighthouse on the easternmost point of mainland NZ — among the first places on Earth to see each day’s sun. ~20 km of gravel from Te Araroa (pre-dawn drive; check your rental terms). In Te Araroa, see Te Waha o Rerekohu, said to be NZ’s largest pōhutukawa.', hard:false, rec:false, link:'https://www.tairawhitigisborne.co.nz/destinations/te-araroa-and-east-cape/', isNew:false },
+  { id:'ni-pacific-coast', coords:[-37.630,177.890], name:'Pacific Coast Highway Stops (SH35)', zone:'East Cape', baseZone:'East Cape', types:['scenic'], dist:0, gain:0, actHrs:2, driveFromBase:0, notes:'Slow, beautiful coast road: Raukōkore church on its point, Waihau Bay, Hicks Bay wharf, carved meeting houses and empty beaches — allow the whole day. SH35 was badly storm-damaged in early 2026; the Pōtaka–Te Araroa section reopened in Feb 2026 for 7am–7pm only, with single-lane sections and ~45 min delays. Check NZTA before committing. Fuel and shops are sparse.', hard:false, rec:false, link:'https://www.journeys.nzta.govt.nz/traffic-bulletins/sh35-reopens-around-east-cape-for-first-vehicles', isNew:false },
+
+  // ── WELLINGTON & KĀPITI ────────────────────────────────
+  { id:'ni-kapiti-1', coords:[-40.888,174.979], name:'Kāpiti Island Overnight Day 1: Rangatira + Tuteremoana', zone:'Wellington', baseZone:'Wellington', types:['wildlife','hike'], dist:6, gain:520, actHrs:5, driveFromBase:0.75, notes:'Predator-free island sanctuary off Paraparaumu. Boat over in the morning to Rangatira and climb Tuteremoana (521m) through forest full of kākā, tīeke and takahē; transfer to the lodge at Waiorua for dinner and a guided night walk — ~1,200 little spotted kiwi live here, so sightings are likely. Kapiti Island Nature Tours is the only overnight provider and capacity is tiny — book now. Sailings depend on sea state.', hard:false, rec:false, book:true, bookNote:'Kapiti Island Nature Tours overnight (tiny capacity)', campHint:'Kāpiti Island lodge', link:'https://www.kapitiisland.com/', isNew:false, multiDay:true, multiDayPart:1, multiDayTotal:2, multiDayGroup:'kapiti' },
+  { id:'ni-kapiti-2', coords:[-40.825,174.937], name:'Kāpiti Island Day 2: Waiorua Walks + Boat Back', zone:'Wellington', baseZone:'Wellington', types:['wildlife','hike'], dist:4, gain:150, actHrs:3.5, driveFromBase:0, notes:'Dawn chorus, then the coastal or hill loop at the north end and a hot lunch at the lodge before the afternoon boat back.', hard:false, rec:false, link:'https://www.kapitiisland.com/', isNew:false, multiDay:true, multiDayPart:2, multiDayTotal:2, multiDayGroup:'kapiti' },
+  { id:'ni-kapiti-day', coords:[-40.888,174.979], name:'Kāpiti Island Day Trip', zone:'Wellington', baseZone:'Wellington', types:['wildlife','hike'], dist:6, gain:520, actHrs:6, driveFromBase:0.75, notes:'If the overnight is full: ferry and DOC access permit via Kapiti Island Nature Tours, explore Rangatira and climb Tuteremoana. No kiwi by day, but superb birdlife. Book.', hard:false, rec:false, book:true, bookNote:'Kāpiti day trip', link:'https://www.kapitiisland.com/', isNew:false },
+  { id:'ni-zealandia', coords:[-41.290,174.753], name:'Zealandia Ecosanctuary — Day + Night Tour', zone:'Wellington', baseZone:'Wellington', types:['wildlife','hike'], dist:5, gain:100, actHrs:3, driveFromBase:0.1, notes:'Fenced valley in the middle of the city: takahē, kākā, tīeke and tuatara by day; the guided night tour adds little spotted kiwi, glowworms and wētā (~2.5h, book).', hard:false, rec:false, book:true, bookNote:'Zealandia night tour', link:'https://www.newzealand.com/us/plan/business/zealandia-by-night-tour/', isNew:false },
+  { id:'ni-weta', coords:[-41.310,174.825], name:'Wētā Workshop Tour (Miramar)', zone:'Wellington', baseZone:'Wellington', types:['scenic'], dist:0, gain:0, actHrs:2, driveFromBase:0.25, notes:'Behind the scenes at the workshop that made the LOTR armour, weapons and creatures. Guided tours; book.', hard:false, rec:false, lotr:true, book:true, bookNote:'Wētā Workshop tour', link:'https://www.wetaworkshop.com/', isNew:false },
+  { id:'ni-mt-vic', coords:[-41.296,174.794], name:'Mt Victoria — Lookout + “Get Off the Road!” Woods', zone:'Wellington', baseZone:'Wellington', types:['run','hike','scenic'], dist:5, gain:200, actHrs:1.25, driveFromBase:0, notes:'Town-belt trails to the best view of Wellington. The hobbits hid from the Black Rider under a tree root in these woods (Fellowship). Easy run from the city.', hard:false, rec:false, lotr:true, isNew:false },
+  { id:'ni-wellington-rest', coords:[-41.290,174.782], name:'Wellington Rest Day — Te Papa + Cable Car + Cuba St', zone:'Wellington', baseZone:'Wellington', types:['scenic'], dist:0, gain:0, actHrs:0, notes:'Te Papa (free), the cable car up to the Botanic Garden, coffee and food on Cuba St. A good buffer before the ferry.', hard:false, rec:false, link:'https://www.tepapa.govt.nz/', isNew:false },
+  { id:'ni-red-rocks', coords:[-41.345,174.740], name:'Red Rocks (Pariwhero) South Coast Walk', zone:'Wellington', baseZone:'Wellington', types:['hike','run'], dist:8, gain:50, actHrs:2, driveFromBase:0.3, notes:'Wild south-coast walk from Owhiro Bay along a 4WD track to red pillow lavas. Fur seals haul out at Sinclair Head mostly in winter, so expect fewer in summer. Very exposed to wind.', hard:false, rec:false, isNew:false },
+  { id:'ni-matiu', coords:[-41.258,174.865], name:'Matiu/Somes Island', zone:'Wellington', baseZone:'Wellington', types:['wildlife','hike'], dist:3, gain:80, actHrs:3, driveFromBase:0, notes:'Predator-free island in Wellington Harbour (East by West ferry). Former quarantine station and wartime internment camp; tuatara, kākāriki, wētā and little penguins. Biosecurity check on arrival. Easy half day.', hard:false, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/wellington-kapiti/places/matiu-somes-island/', isNew:false },
+  { id:'ni-kaitoke', coords:[-41.080,175.180], name:'Kaitoke Regional Park — Rivendell', zone:'Wellington', baseZone:'Wellington', types:['hike','scenic'], dist:4, gain:80, actHrs:1.5, driveFromBase:0.75, notes:'The Rivendell filming site — signage and a replica Elvish archway in the forest — plus river swimming holes and short walks. On SH2 north of Upper Hutt, an easy stop to or from the Wairarapa.', hard:false, rec:false, lotr:true, isNew:false },
+  { id:'ni-ferry', coords:[-41.288,174.006], name:'⛴ Cook Strait Ferry — Wellington → Picton', zone:'Picton', baseZone:'Picton', types:['scenic'], dist:0, gain:0, actHrs:0, driveFromBase:0, notes:'Interislander or Bluebridge: ~3h20–3h45 sailing plus ~45–60 min vehicle check-in (counted in this day’s transit time). The last hour through Queen Charlotte Sound is beautiful — stay on deck. Book vehicle space 4–8+ weeks ahead for Dec–Jan; campervans are priced by length (roughly NZ$270–400 one way). Big southerlies cancel sailings, so keep the next day flexible. Check with your rental company how their vans cross (most go on the ferry; some swap at the terminals).', hard:false, rec:false, book:true, bookNote:'Interislander or Bluebridge — vehicle space', link:'https://www.interislander.co.nz/', isNew:false },
+
+  // ── WAIRARAPA ──────────────────────────────────────────
+  { id:'ni-putangirua', coords:[-41.447,175.233], name:'Putangirua Pinnacles — the Paths of the Dead', zone:'Wairarapa', baseZone:'Wairarapa', types:['hike','scenic'], dist:4, gain:200, actHrs:1.5, driveFromBase:1.0, notes:'Eroded earth pillars where Aragorn, Legolas and Gimli rode the Dimholt Road in Return of the King. Pinnacles Ridge Track to the lookout (~45 min one way). DOC warns of high rockfall/landslide risk: stay on marked tracks — there’s no track up the stream bed beyond the ridge turnoff, and the stream floods fast after rain. DOC campsite at the road end.', hard:false, rec:false, lotr:true, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/wairarapa/places/putangirua-pinnacles-scenic-reserve/things-to-do/pinnacles-ridge-track/', isNew:false },
+  { id:'ni-cape-palliser', coords:[-41.613,175.290], name:'Cape Palliser — Lighthouse + Fur Seal Colony', zone:'Wairarapa', baseZone:'Wairarapa', types:['wildlife','hike'], dist:1, gain:60, actHrs:1.25, driveFromBase:1.25, notes:'Southern tip of the North Island: ~250 steps to the red-and-white lighthouse and a big fur seal colony on the rocks below (keep 20m back; never get between a seal and the sea). Ngawi’s row of beach bulldozers on the way. Pair with the Pinnacles.', hard:false, rec:false, isNew:false },
+  { id:'ni-holdsworth', coords:[-40.896,175.474], name:'Mt Holdsworth via Powell Hut (Tararua)', zone:'Wairarapa', baseZone:'Wairarapa', types:['hike'], dist:16, gain:1170, actHrs:7, driveFromBase:0.9, notes:'Classic Tararua climb: beech forest up to Powell Hut (1,200m), then the exposed ridge to Mt Holdsworth (1,470m) with views over the Main Range. DOC times with a pack: 5h to Powell Hut, 6h to the summit one way — a big day return, or stay at Powell Hut (check DOC booking rules). The Tararuas are notorious for wind, mist and cold even in summer; turn back if the tops are clagged in.', hard:true, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/wellington-kapiti/places/tararua-forest-park/things-to-do/tracks/holdsworth-roadend-to-powell-hut-mount-holdsworth/', isNew:false },
+  { id:'ni-martinborough', coords:[-41.218,175.459], name:'Martinborough Wine Cycle (rest-ish)', zone:'Wairarapa', baseZone:'Wairarapa', types:['bike','scenic'], dist:15, gain:30, actHrs:3.5, driveFromBase:0, notes:'Flat village with a cluster of wineries in cycling distance — hire bikes in the square. Pinot Noir country.', hard:false, rec:false, isNew:false },
+  { id:'ni-pukaha', coords:[-40.734,175.646], name:'Pūkaha National Wildlife Centre', zone:'Wairarapa', baseZone:'Wairarapa', types:['wildlife'], dist:2, gain:20, actHrs:2, driveFromBase:1.25, notes:'Forest reserve on SH2 north of Masterton with kiwi, daily kākā and eel feeds, and conservation breeding programmes. Easy stop between Hawke’s Bay and Wellington.', hard:false, rec:false, link:'https://www.pukaha.org.nz/', isNew:false },
+  { id:'ni-remutaka', coords:[-41.100,175.190], name:'Remutaka Rail Trail over the Summit', zone:'Wairarapa', baseZone:'Wairarapa', types:['bike','run'], dist:36, gain:350, actHrs:3.5, driveFromBase:0.6, notes:'Gentle old railway grade from Kaitoke over the Remutaka summit (tunnels — bring lights) down to Cross Creek and back; or one way with a shuttle. Run or ride.', hard:false, rec:false, isNew:false },
+];
+
+// ═══════════════════════════════════════════════════════
+// SOUTH ISLAND NORTH-WEST / WEST COAST / LEWIS PASS ADDITIONS
+// ═══════════════════════════════════════════════════════
+const SI_NW_ACTIVITIES = [
+  { id:'si-pupu-springs', coords:[-40.839,172.770], name:'Te Waikoropupū Springs', zone:'Takaka', baseZone:'Takaka', types:['scenic','hike'], dist:1.5, gain:20, actHrs:0.75, driveFromBase:0.15, notes:'Some of the clearest fresh water ever measured (~63m visibility). Wāhi tapu to Ngāti Tama — look, don’t touch: no swimming, wading or touching the water. Short boardwalk loop; the old Pupu Hydro water-race walkway is nearby.', hard:false, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/nelson-tasman/places/takaka-area/te-waikoropupu-springs/', isNew:true },
+  { id:'si-rawhiti-cave', coords:[-40.840,172.830], name:'Rawhiti Cave', zone:'Takaka', baseZone:'Takaka', types:['hike','scenic'], dist:3, gain:250, actHrs:1.25, driveFromBase:0.25, notes:'A steep, narrow climb (DOC “expert”) to a huge cave mouth hung with stalactites, some greened with moss — one of the most striking cave entrances in NZ. View from the platform, don’t enter. Don’t cross Dry River after heavy rain. ~15 min from Tākaka.', hard:false, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/nelson-tasman/places/takaka-area/things-to-do/tracks/rawhiti-cave-track/', isNew:true },
+  { id:'si-totaranui', coords:[-40.820,173.005], name:'Abel Tasman North — Totaranui → Separation Point → Whariwharangi', zone:'Takaka', baseZone:'Takaka', types:['hike','run','wildlife'], dist:17, gain:500, actHrs:4.5, driveFromBase:1.0, notes:'The quiet north end of Abel Tasman: golden bays, the fur seals at Separation Point and the historic Whariwharangi homestead hut, looping back over Gibbs Hill (distances approximate). Totaranui road from Tākaka is narrow, winding gravel (~1h). Big DOC campground at Totaranui (book).', hard:false, rec:false, isNew:true },
+  { id:'si-heaphy-1', coords:[-40.878,172.400], name:'Heaphy Track Day 1: Brown Hut → Perry Saddle Hut', zone:'Heaphy', baseZone:'Heaphy', types:['hike'], dist:17.5, gain:800, actHrs:4, driveFromBase:0, notes:'Great Walk, 78.4 km from Golden Bay to Karamea over tussock downs to a nīkau-palm coast. Walkers year-round; bikes only 1 May–30 Nov, so it’s walkers-only in summer. Fully reopened with the new Heaphy River bridge. The real puzzle is logistics: the ends are ~6h apart by road — book a vehicle-relocation service for the van, or fly/shuttle. Day 1: steady climb through beech forest (DOC 5h).', hard:false, rec:false, book:true, bookNote:'Great Walk huts (DOC) + van relocation/transport', campHint:'Perry Saddle', link:'https://www.doc.govt.nz/heaphytrack', isNew:true, multiDay:true, multiDayPart:1, multiDayTotal:4, multiDayGroup:'heaphy' },
+  { id:'si-heaphy-2', coords:[-40.960,172.240], name:'Heaphy Track Day 2: Perry Saddle → James Mackay Hut', zone:'Heaphy', baseZone:'Heaphy', types:['hike'], dist:24.2, gain:300, actHrs:5, driveFromBase:0, notes:'Across the strange open Gouland Downs and past Saxon Hut (DOC 2h + 1.5h + 3h). Big skies, limestone arches and tussock.', hard:false, rec:false, campHint:'James Mackay', link:'https://www.doc.govt.nz/heaphytrack', isNew:true, multiDay:true, multiDayPart:2, multiDayTotal:4, multiDayGroup:'heaphy' },
+  { id:'si-heaphy-3', coords:[-40.992,172.110], name:'Heaphy Track Day 3: James Mackay → Heaphy Hut', zone:'Heaphy', baseZone:'Heaphy', types:['hike'], dist:20.5, gain:100, actHrs:4.5, driveFromBase:0, notes:'Long descent via Lewis Hut into nīkau forest down to the Heaphy River mouth (DOC 6h). If the track floods, wait at Lewis Shelter or Heaphy Hut.', hard:false, rec:false, campHint:'Heaphy Hut', link:'https://www.doc.govt.nz/heaphytrack', isNew:true, multiDay:true, multiDayPart:3, multiDayTotal:4, multiDayGroup:'heaphy' },
+  { id:'si-heaphy-4', coords:[-41.104,172.096], name:'Heaphy Track Day 4: Heaphy Hut → Kōhaihai', zone:'Heaphy', baseZone:'Heaphy', types:['hike'], dist:16.2, gain:150, actHrs:3.75, driveFromBase:0, notes:'The famous West Coast finish: wild beaches and nīkau groves (DOC 5h). Check tide tables for the coastal sections. Karamea is 15 min from the road end.', hard:false, rec:false, campHint:'Kōhaihai', link:'https://www.doc.govt.nz/heaphytrack', isNew:true, multiDay:true, multiDayPart:4, multiDayTotal:4, multiDayGroup:'heaphy' },
+  { id:'si-scotts-beach', coords:[-41.104,172.096], name:'Heaphy Day Walk — Kōhaihai → Scotts Beach', zone:'Karamea', baseZone:'Karamea', types:['hike','run'], dist:9, gain:200, actHrs:2.25, driveFromBase:0.25, notes:'The West Coast end of the Heaphy without the logistics: over a small saddle through nīkau palms to Scotts Beach (~1.5h each way at DOC pace). Add the short Nīkau Walk at Kōhaihai. Sandfly repellent essential; don’t swim (rips).', hard:false, rec:false, link:'https://www.doc.govt.nz/heaphytrack', isNew:true },
+  { id:'si-oparara', coords:[-41.156,172.198], name:'Ōpārara Basin — Arches + Moria Gate', zone:'Karamea', baseZone:'Karamea', types:['hike','scenic'], dist:6, gain:100, actHrs:2.5, driveFromBase:0.6, notes:'Limestone arches in deep, tannin-stained rainforest: the huge Ōpārara Arch, Moria Gate (named after the Mines of Moria — not a filming site) and the Mirror Tarn. ~16 km of gravel from Karamea (check rental terms). Crazy Paving and Box Canyon caves nearby — bring a torch.', hard:false, rec:false, lotr:true, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/nelson-tasman/places/kahurangi-national-park/things-to-do/tracks/moira-gate-and-mirror-tarn-loop/', isNew:true },
+  { id:'si-charming-creek', coords:[-41.570,171.975], name:'Charming Creek Walkway (north section)', zone:'Westport', baseZone:'Westport', types:['hike','run','bike'], dist:12, gain:150, actHrs:2.75, driveFromBase:1.0, notes:'Old coal-tramway through the Ngakawau Gorge: rusting sawmill machinery, a 50m tunnel out to Mangatini Falls and a swing bridge. DOC: 2h one way from the Charming Creek car park (8.5 km gravel from Seddonville); return the same way — the walkway is split into north and south sections by an active slip. Rockfall risk near the tunnel — avoid in heavy rain or wind.', hard:false, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/west-coast/places/westport/things-to-do/tracks/charming-creek-walkway/', isNew:true },
+  { id:'si-cape-foulwind', coords:[-41.777,171.451], name:'Cape Foulwind Walkway + Tauranga Bay Seals', zone:'Westport', baseZone:'Westport', types:['wildlife','hike','run'], dist:6, gain:100, actHrs:1.5, driveFromBase:0.25, notes:'Fur seal colony 1 km (30 min) from Tauranga Bay car park — pups Sep–Feb — then on along the clifftops to the lighthouse (5.8 km one way, DOC 2h). View seals from the platform only. 15 min from Westport.', hard:false, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/west-coast/places/westport/things-to-do/tracks/cape-foulwind-walkway/', isNew:true },
+  { id:'si-denniston', coords:[-41.744,171.795], name:'Denniston Plateau + Incline', zone:'Westport', baseZone:'Westport', types:['scenic','hike'], dist:3, gain:50, actHrs:1.5, driveFromBase:0.5, notes:'Ghost coal town on a plateau above the coast, once reached by the notorious Denniston Incline (wagons lowered ~500m down the hillside). Heritage walks, the brakehead and big views. Setting of The Denniston Rose.', hard:false, rec:false, isNew:true },
+  { id:'si-ogr-lyell', coords:[-41.794,172.047], name:'Old Ghost Road — Lyell → Lyell Saddle Hut (ride/run)', zone:'Westport', baseZone:'Westport', types:['bike','run','hike'], dist:36, gain:900, actHrs:5.5, driveFromBase:0.85, notes:'NZ’s longest singletrack (~86 km, 4–5 days walking, Grade 4 riding in places). As a day: ride or run the beautifully graded old gold-miners’ road from the Lyell campsite (50 min from Westport on SH6) to Lyell Saddle Hut (18 km; DOC 3–4h biking / 4–6h walking up), then fly back down. A full traverse needs hut bookings at oldghostroad.org.nz and a vehicle shuttle.', hard:true, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/west-coast/places/mokihinui-river-area/things-to-do/tracks/the-old-ghost-road/', isNew:true },
+  { id:'si-paparoa-gw', coords:[-42.117,171.330], name:'Paparoa Track Great Walk (multi-day — reference)', zone:'Punakaiki', baseZone:'Punakaiki', types:['hike','bike'], dist:55, gain:1500, actHrs:14, driveFromBase:0, notes:'55 km Great Walk (3 days walking / 2 riding) from Smoke-ho car park near Blackball over the Paparoa Range escarpment to the Pororari River at Punakaiki, with the Pike29 Memorial Track. Huts must be booked; you need transport between the ends. Reference entry — schedule the days as custom activities, or use the Punakaiki day options.', hard:true, rec:false, book:true, bookNote:'Great Walk huts (DOC) + transport', link:'https://www.doc.govt.nz/paparoatrack', isNew:true },
+  { id:'si-wilderness-trail', coords:[-42.716,170.964], name:'West Coast Wilderness Trail — Day Ride', zone:'Hokitika', baseZone:'Hokitika', types:['bike'], dist:40, gain:300, actHrs:4, driveFromBase:0.2, notes:'Great Ride between Greymouth and Ross through rainforest, old water races and lakes. Hire bikes and a shuttle in Hokitika or Greymouth and pick a one-day section (e.g. via Lake Kaniere).', hard:false, rec:false, isNew:true },
+  { id:'si-lake-daniell', coords:[-42.371,172.225], name:'Lake Daniell Track (Lewis Pass)', zone:'Lewis Pass', baseZone:'Lewis Pass', types:['hike','run'], dist:16, gain:150, actHrs:4.5, driveFromBase:0.25, notes:'Well-formed bench track through red beech forest from Marble Hill campsite (5 km east of Springs Junction) to Lake Daniell and the lakeside Kōhanga Atawhai – Manson Nicholls Hut. DOC 3h one way. Wasps common Dec–Apr.', hard:false, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/west-coast/places/lewis-pass-scenic-reserve/things-to-do/tracks/lake-daniell-track/', isNew:true },
+  { id:'si-maruia-springs', coords:[-42.382,172.338], name:'Maruia Hot Springs Soak', zone:'Lewis Pass', baseZone:'Lewis Pass', types:['soak'], dist:0, gain:0, actHrs:1.5, driveFromBase:0, notes:'Japanese-style hot pools beside the Maruia River on SH7 — a good soak on the Lewis Pass route between the West Coast and Hanmer/Christchurch. Check opening hours before you rely on it.', hard:false, rec:false, link:'https://www.maruiahotsprings.nz/', isNew:true },
+  { id:'si-st-james', coords:[-42.522,172.388], name:'St James Walkway (multi-day — reference)', zone:'Lewis Pass', baseZone:'Lewis Pass', types:['hike'], dist:66, gain:1500, actHrs:20, driveFromBase:0, notes:'Classic 4–5 day subalpine tramp from Lewis Pass to Boyle Village through beech forest and big tussock valleys, with backcountry huts. Reference entry — plan with DOC.', hard:true, rec:false, link:'https://www.doc.govt.nz/parks-and-recreation/places-to-go/canterbury/places/st-james-conservation-area/things-to-do/tracks/st-james-walkway/', isNew:true },
+];
+
+ACTIVITIES.push(...NI_ACTIVITIES, ...SI_NW_ACTIVITIES);
+
 // ═══════════════════════════════════════════════════════
 // ZONE ROUTE ORDER (for conflict detection)
 // ═══════════════════════════════════════════════════════
-const ZONE_ORDER = ['CHC','Castle Hill','Arthurs Pass','Peel Forest','Mackenzie','Mt Cook','Wanaka','Glenorchy','Queenstown','Te Anau','Milford','Bluff','Stewart Island','Dunedin','Haast','Franz Josef','Fox Glacier','Hokitika','Punakaiki','Marahau','Takaka','Nelson Lakes','Marlborough Sounds','Picton','Blenheim','Kaikoura','Hanmer'];
+const NI_ZONES = new Set(['Auckland','Whangarei','Bay of Islands','Far North','Kauri Coast','Thames','Coromandel Town','Hahei','Tauranga','Rotorua','East Cape','Gisborne','Waikaremoana','Napier','Taupo','Tongariro','Wharepapa','Raglan','Waitomo','Taranaki','Wairarapa','Wellington']);
+const ZONE_ORDER = [
+  // North Island — suggested loop from Auckland, finishing at Wellington for the ferry
+  'Auckland','Whangarei','Bay of Islands','Far North','Kauri Coast','Thames','Coromandel Town','Hahei','Tauranga','Rotorua',
+  'East Cape','Gisborne','Waikaremoana','Napier','Taupo','Tongariro','Wharepapa','Raglan','Waitomo','Taranaki','Wairarapa','Wellington',
+  // South Island — north-west & West Coast first, then the rest of the island
+  'Picton','Marlborough Sounds','Blenheim','Nelson','Marahau','Takaka','Heaphy','Nelson Lakes','Karamea','Westport','Punakaiki','Hokitika',
+  'Franz Josef','Fox Glacier','Haast','Wanaka','Glenorchy','Queenstown','Te Anau','Milford','Bluff','Stewart Island','Dunedin',
+  'Mt Cook','Mackenzie','Peel Forest','Lewis Pass','Hanmer','Kaikoura','Arthurs Pass','Castle Hill','CHC'];
+
+function islandOf(zone) { return NI_ZONES.has(zone) ? 'N' : 'S'; }
+
+// Airport codes → planner zones (start = arrival airport, end = departure airport)
+const AIRPORT_ZONES = { AKL:'Auckland', WLG:'Wellington', CHC:'CHC', ZQN:'Queenstown', NSN:'Nelson', DUD:'Dunedin', NPE:'Napier', ROT:'Rotorua', TRG:'Tauranga', NPL:'Taranaki', BHE:'Blenheim', HKK:'Hokitika', WSZ:'Westport' };
+function startZone() { return AIRPORT_ZONES[(tripConfig.arrivalAirport || '').toUpperCase()] || 'Auckland'; }
+function endZone() { return AIRPORT_ZONES[(tripConfig.startAirport || '').toUpperCase()] || 'CHC'; }
 
 function zoneOrder(z) { const i = ZONE_ORDER.indexOf(z); return i === -1 ? 99 : i; }
 
@@ -2216,14 +2996,17 @@ const dayN = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const monN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 const DEFAULT_CONFIG = {
-  startDate: '2026-03-16',
-  numDays: 20,
-  flightTime: '15:45',
-  flightDest: 'MEL',
-  startAirport: 'CHC',
-  camperNote: 'Return Jucy camper in morning',
-  tripName: 'NZ South Island',
-  selfContained: false,  // vehicle is self-contained (affects camp eligibility)
+  startDate: '2026-12-18',     // Fri 18 Dec 2026 → Sat 30 Jan 2027 (44 days incl. fly day)
+  numDays: 44,
+  arrivalAirport: 'AKL',       // trip starts here (sets the starting zone)
+  arrivalNote: 'Arrive Auckland — pick up campervan',
+  flightTime: '',
+  flightDest: '',
+  startAirport: 'CHC',         // departure airport for the flight home (sets the end zone)
+  camperNote: 'Return campervan in Christchurch',
+  tripName: 'NZ North + South',
+  niTargetDays: 18,            // "at least 2.5 weeks" on the North Island
+  selfContained: false,        // vehicle is self-contained (affects camp eligibility)
 };
 
 let tripConfig = { ...DEFAULT_CONFIG };
@@ -2262,6 +3045,9 @@ const state = {
   userNotes: {},             // { actId: 'note text' } — notes on any activity
   showingCustomForm: false,  // inline create/edit form in sheet
   editingCustomId: null,     // id of custom act being edited (null = new)
+  islandFilter: 'all',       // sheet filter: 'all' | 'N' | 'S'
+  booked: {},                // { actId: true } — ticked off in the book-ahead checklist (synced)
+  bookCardOpen: false,
 };
 
 // ═══════════════════════════════════════════════════════
@@ -2280,7 +3066,7 @@ function getPrevZone(dayIdx) {
     const acts=getDayActs(`day-${i}`);
     if(acts.length) return acts[acts.length-1].baseZone;
   }
-  return 'CHC';
+  return startZone();
 }
 
 // True drive time to get to this day's zone from previous zone.
@@ -2291,8 +3077,9 @@ function getTransitDrive(dayIdx) {
   // Fly day: drive from last camp to CHC
   if(DAYS[dayIdx] && DAYS[dayIdx].isFly) {
     const lastZone = getPrevZone(dayIdx);
-    if(!lastZone || lastZone === 'CHC') return 0;
-    return getDrive(lastZone, 'CHC') ?? 0;
+    const end = endZone();
+    if(!lastZone || lastZone === end) return 0;
+    return getDrive(lastZone, end) ?? 0;
   }
   const acts = getDayActs(`day-${dayIdx}`);
   if(!acts.length) return 0;
@@ -2396,15 +3183,29 @@ function getDayWarnings(dayIdx) {
   const transit=getTransitDrive(dayIdx);
   const gain=getDayGain(dayIdx);
 
+  // Public holidays (shown even on empty days)
+  const hol = DAYS[dayIdx] ? getHoliday(DAYS[dayIdx].date) : null;
+  if(hol) warns.push({type:'info', msg:`${hol.name} — ${hol.note}`});
+
   if(!acts.length) return warns;
 
-  // Multi-zone in single day
-  const zones=new Set(acts.map(a=>a.baseZone));
+  // Multi-zone in single day (the ferry item doesn't count as a second zone)
+  const zones=new Set(acts.filter(a=>a.id!=='ni-ferry').map(a=>a.baseZone));
   if(zones.size>1) warns.push({type:'warn',msg:'Activities from different zones on same day'});
 
+  // Operators that don't run every day / on Christmas Day
+  const dow = DAYS[dayIdx].date.getDay();
+  const isPH = hol && (!hol.regional || /Auckland/.test(hol.name));
+  for (const a of acts) {
+    if (a.noDays && a.noDays.includes(dow) && !isPH) warns.push({type:'warn', msg:a.noDaysMsg || `${a.name} doesn’t run on ${DAYS[dayIdx].dayName}s`});
+    if (hol && hol.name === 'Christmas Day' && a.book) warns.push({type:'info', msg:`Check that “${a.name.split(' — ')[0]}” operates on Christmas Day`});
+  }
+
   // Transit drive check
-  if(transit>4) warns.push({type:'warn',msg:`${transit.toFixed(1)}h drive from previous zone — very long travel day`});
-  else if(transit>2.5) warns.push({type:'info',msg:`${transit.toFixed(1)}h transit drive from previous zone`});
+  const ferryHrs = dayCrossesStrait(dayIdx) ? (DRIVE['Wellington']?.['Picton'] || 0) : 0;
+  const roadTransit = Math.max(0, transit - ferryHrs);
+  if(roadTransit>4) warns.push({type:'warn',msg:`${roadTransit.toFixed(1)}h drive from previous zone${ferryHrs?' (plus the ferry)':''} — very long travel day`});
+  else if(roadTransit>2.5) warns.push({type:'info',msg:`${roadTransit.toFixed(1)}h transit drive from previous zone${ferryHrs?' (plus the ferry)':''}`});
 
   // Day overloaded
   if(total>13) warns.push({type:'warn',msg:`Day very overloaded: ~${total.toFixed(1)}h total (drive + activity)`});
@@ -2417,7 +3218,7 @@ function getDayWarnings(dayIdx) {
 
   // Zone ordering conflicts (backtracking significantly)
   // Skip warning for zones that are geographically valid at either end of the trip
-  const flexZones = new Set(['CHC','Castle Hill','Arthurs Pass','Hanmer']);
+  const flexZones = new Set(['CHC','Castle Hill','Arthurs Pass','Hanmer','Lewis Pass','Auckland','Wellington','Picton']);
   const prevZone=getPrevZone(dayIdx);
   const thisZone=acts[0].baseZone;
   const pO=zoneOrder(prevZone), tO=zoneOrder(thisZone);
@@ -2427,10 +3228,137 @@ function getDayWarnings(dayIdx) {
   // Stewart Island specific
   if(acts.some(a=>a.zone==='Stewart Island')){
     const bluffDrive=getDrive('Bluff','Stewart Island');
-    warns.push({type:'info',msg:`Leave Jucy camper at Bluff. Ferry from Bluff (1h crossing). Allow half day travel each way.`});
+    warns.push({type:'info',msg:`Leave the camper at Bluff. Ferry from Bluff (1h crossing). Allow half day travel each way.`});
+  }
+
+  // Cook Strait crossing
+  if(dayCrossesStrait(dayIdx)){
+    const hasFerry = acts.some(a=>a.id==='ni-ferry');
+    warns.push(hasFerry
+      ? {type:'info', msg:'⛴ Ferry day — ~3h30 sailing + ~1h check-in are in the transit time. Keep tomorrow flexible in case a southerly cancels sailings.'}
+      : {type:'warn', msg:'⛴ This day crosses Cook Strait — add the “Cook Strait Ferry” item and book vehicle space.'});
   }
 
   return warns;
+}
+
+// True if this day's transit path goes between the islands
+function dayCrossesStrait(dayIdx) {
+  const acts = getDayActs(`day-${dayIdx}`);
+  if (!acts.length) return false;
+  const startZ = state.driveEve[`day-${dayIdx}`] ? acts[0].baseZone : getPrevZone(dayIdx);
+  const path = [startZ, ...acts.map(a=>a.baseZone)];
+  return path.some((z,k)=> k>0 && z && path[k-1] && islandOf(z)!==islandOf(path[k-1]));
+}
+
+// ═══════════════════════════════════════════════════════
+// NZ PUBLIC HOLIDAYS (national + regional anniversaries near the trip)
+// ═══════════════════════════════════════════════════════
+function _addDays(d, n) { const t = new Date(d); t.setDate(t.getDate() + n); return t; }
+function _nearestMonday(y, m, d) {
+  const t = new Date(y, m, d), dow = t.getDay();
+  const back = (dow + 6) % 7, fwd = (8 - dow) % 7;
+  return _addDays(t, back < fwd ? -back : fwd);
+}
+const HOL_NOTE = 'public holiday: many shops, i-SITEs and tour operators closed or on reduced hours; campsites and tracks busy';
+function getHoliday(date) {
+  if (!date) return null;
+  const y = date.getFullYear();
+  const same = a => a.getFullYear()===y && a.getMonth()===date.getMonth() && a.getDate()===date.getDate();
+  const list = [];
+  const pairs = [
+    [new Date(y,11,25), 'Christmas Day', '🎄 Christmas', new Date(y,11,26), 'Boxing Day', 'Boxing Day'],
+    [new Date(y,0,1), 'New Year’s Day', '🎆 New Year', new Date(y,0,2), 'Day after New Year’s', '2 Jan holiday'],
+  ];
+  for (const [d1, n1, s1, d2, n2, s2] of pairs) {
+    list.push({ d:d1, name:n1, short:s1 }, { d:d2, name:n2, short:s2 });
+    const w = d1.getDay(); // Mondayisation
+    if (w === 6) list.push({ d:_addDays(d1,2), name:n1+' (observed)', short:n1+' (obs.)' }, { d:_addDays(d1,3), name:n2+' (observed)', short:n2+' (obs.)' });
+    else if (w === 0) list.push({ d:_addDays(d1,2), name:n1+' (observed)', short:n1+' (obs.)' });
+    else if (w === 5) list.push({ d:_addDays(d1,3), name:n2+' (observed)', short:n2+' (obs.)' });
+  }
+  list.push(
+    { d:_nearestMonday(y,0,22), name:'Wellington Anniversary Day (Wellington region)', short:'Wgtn Anniversary', regional:true },
+    { d:_nearestMonday(y,0,29), name:'Auckland Anniversary Day (Auckland & Northland)', short:'Akl Anniversary', regional:true },
+    { d:_nearestMonday(y,1,1),  name:'Nelson Anniversary Day (Nelson region)', short:'Nelson Anniversary', regional:true },
+  );
+  const hit = list.find(h => same(h.d));
+  if (!hit) return null;
+  let note = hit.regional ? 'regional public holiday: some local businesses closed; busier roads and campsites' : HOL_NOTE;
+  if (hit.name === 'Christmas Day') note = 'restricted trading: almost all shops shut and most tours don’t run. Stock up on the 24th and plan a hike or beach day.';
+  return { ...hit, note };
+}
+
+// ═══════════════════════════════════════════════════════
+// ISLAND SPLIT + BOOK-AHEAD CHECKLIST
+// ═══════════════════════════════════════════════════════
+// Returns 'N', 'S' or 'X' (crossing day) for a day — empty days take the island you're on.
+function getDayIsland(i) {
+  if (DAYS[i] && DAYS[i].isFly) return islandOf(endZone());
+  const acts = getDayActs(`day-${i}`);
+  const prev = getPrevZone(i);
+  if (!acts.length) return islandOf(prev);
+  const isl = new Set([prev, ...acts.map(a=>a.baseZone)].map(islandOf));
+  return isl.size > 1 ? 'X' : islandOf(acts[0].baseZone);
+}
+function getIslandSplit() {
+  const s = { N:0, S:0, X:0, firstX:-1 };
+  for (let i=0;i<tripConfig.numDays;i++) { const k = getDayIsland(i); s[k]++; if (k==='X' && s.firstX<0) s.firstX = i; }
+  return s;
+}
+function getBookingItems() {
+  const items = [];
+  for (let i=0;i<tripConfig.numDays;i++) {
+    for (const a of getDayActs(`day-${i}`)) {
+      if (a.book && !items.some(x=>x.key===a.id)) items.push({ key:a.id, act:a, dayIdx:i });
+    }
+  }
+  const split = getIslandSplit();
+  if (split.firstX >= 0 && !items.some(x=>x.key==='ni-ferry')) {
+    items.push({ key:'ferry-missing', act:getAct('ni-ferry'), dayIdx:split.firstX, missing:true });
+    items.sort((a,b)=>a.dayIdx-b.dayIdx);
+  }
+  return items;
+}
+function toggleBookCard(forceOpen) {
+  state.bookCardOpen = forceOpen === true ? true : !state.bookCardOpen;
+  renderBookCard();
+  if (state.bookCardOpen) {
+    const el = document.getElementById('book-card');
+    if (el && el.style.display !== 'none') el.scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+}
+function renderBookCard() {
+  const card = document.getElementById('book-card');
+  if (!card) return;
+  const items = getBookingItems();
+  if (!items.length) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+  const real = items.filter(b=>!b.missing);
+  const done = real.filter(b=>state.booked[b.key]).length;
+  const open = state.bookCardOpen;
+  let html = `<div class="book-card-head" data-book-toggle="1"><span>📌 Book-ahead checklist</span><span class="book-count">${real.length-done} to book · ${done} done ${open?'▲':'▼'}</span></div>`;
+  if (open) {
+    html += `<div class="book-note">Peak Kiwi summer holidays run roughly 26 Dec – mid Jan: ferry space, Great Walk huts, island ferries and the popular tours sell out. Tick items off as you book them — ticks sync with your shared plan.</div>`;
+    for (const b of items) {
+      const d = DAYS[b.dayIdx];
+      const isDone = !!state.booked[b.key];
+      const when = d ? `${d.dayName} ${d.dayNum} ${d.month}` : '';
+      const title = b.missing ? 'Cook Strait ferry — not on your plan yet' : b.act.name;
+      const sub = b.missing ? 'Your plan crosses Cook Strait on this day. Add the ferry item and book vehicle space.' : (b.act.bookNote || 'Book ahead');
+      const link = b.act && b.act.link ? `<a href="${b.act.link}" target="_blank" rel="noopener" data-stop="1">↗</a>` : '';
+      html += `<label class="book-row${isDone?' done':''}${b.missing?' missing':''}">${b.missing ? '<span class="book-tick">⚠</span>' : `<input type="checkbox" data-book-key="${b.key}"${isDone?' checked':''}>`}<span class="book-date">${when}</span><span class="book-what"><strong>${title}</strong><br><span class="book-sub">${sub}</span></span>${link}</label>`;
+    }
+  }
+  card.innerHTML = html;
+  card.querySelector('[data-book-toggle]').addEventListener('click', () => toggleBookCard());
+  card.querySelectorAll('a[data-stop]').forEach(a => a.addEventListener('click', e => e.stopPropagation()));
+  card.querySelectorAll('input[data-book-key]').forEach(cb => cb.addEventListener('change', () => {
+    const k = cb.dataset.bookKey;
+    if (cb.checked) state.booked[k] = true; else delete state.booked[k];
+    renderBookCard(); renderTripSummary();
+    if (typeof debouncedSave === 'function' && sync.initialised) debouncedSave();
+  }));
 }
 
 // ═══════════════════════════════════════════════════════
@@ -2530,6 +3458,15 @@ function renderTripSummary(){
     : '<span class="ts-val">—</span>';
   document.getElementById('ts-dist').innerHTML = lotrHtml;
   document.getElementById('ts-hard').textContent=hardCount;
+
+  // Island split (target: at least 2.5 weeks on the North Island)
+  const isl = getIslandSplit();
+  const target = tripConfig.niTargetDays || 18;
+  const niOk = isl.N >= target;
+  document.getElementById('ts-island').innerHTML = `<div class="lotr-wrap"><span class="lotr-val">${isl.N} N · ${isl.S} S</span><span class="lotr-sub">${isl.X?`⛴ ${isl.X} ferry · `:''}NI target ${target}+ ${niOk?'✓':`(${target-isl.N} short)`}</span></div>`;
+  const bk = getBookingItems().filter(b=>!b.missing);
+  const bkDone = bk.filter(b=>state.booked[b.key]).length;
+  document.getElementById('ts-book').innerHTML = `<div class="lotr-wrap"><span class="lotr-val">${bk.length-bkDone}</span><span class="lotr-sub">${bkDone} of ${bk.length} booked</span></div>`;
 }
 
 function renderFatigueChart(){
@@ -2607,7 +3544,7 @@ function renderDays(){
 
     // Summary text
     let summaryText='';
-    if(isFly) summaryText='✈ Fly CHC → MEL 15:45';
+    if(isFly) summaryText=flyLabel();
     else if(hasActs) summaryText=acts.map(a=>a.name).join(' + ');
     else summaryText='Tap to add activities';
 
@@ -2617,7 +3554,7 @@ function renderDays(){
       <div class="day-header" data-day="${day.id}">
         <div class="day-num-badge${hasActs?' active':''}">${day.dayNum}</div>
         <div class="day-info">
-          <div class="day-label">${day.dayName} ${day.month}</div>
+          <div class="day-label">${day.dayName} ${day.month}${(()=>{const h=getHoliday(day.date);return h?` · <span class="hol-lbl">${h.short}</span>`:'';})()}${i===0&&tripConfig.arrivalAirport?` · ✈ ${tripConfig.arrivalAirport}`:''}</div>
           <div class="day-summary">${summaryText}</div>
         </div>
         <div class="day-load-wrap">
@@ -2630,13 +3567,17 @@ function renderDays(){
       <div class="day-body">`;
 
     // Scheduled items
-    if(hasActs||isFly){
+    if(hasActs||isFly||(i===0&&tripConfig.arrivalNote)){
       html+=`<div class="sched-list">`;
+      if(i===0&&tripConfig.arrivalNote){
+        html+=`<div class="sched-item arrive-item"><div class="sched-item-info"><div class="sched-item-name">✈ ${tripConfig.arrivalNote}</div><div class="sched-item-meta">${tripConfig.arrivalAirport||''} · day 1 of ${tripConfig.numDays}</div></div></div>`;
+      }
       if(isFly){
         const lastZone = getPrevZone(i);
-        const driveToCHC = (lastZone && lastZone !== 'CHC') ? (getDrive(lastZone, 'CHC') ?? 0) : 0;
-        const driveStr = driveToCHC > 0 ? ` · 🚗 ${driveToCHC.toFixed(1)}h drive to CHC` : '';
-        html+=`<div class="sched-item fly-item"><div class="sched-item-info"><div class="sched-item-name">✈ Fly ${tripConfig.startAirport} → ${tripConfig.flightDest} (${tripConfig.flightTime})</div><div class="sched-item-meta">${tripConfig.camperNote}${driveStr}</div></div></div>`;
+        const endZ = endZone();
+        const driveToCHC = (lastZone && lastZone !== endZ) ? (getDrive(lastZone, endZ) ?? 0) : 0;
+        const driveStr = driveToCHC > 0 ? ` · 🚗 ${driveToCHC.toFixed(1)}h drive to ${endZ}` : '';
+        html+=`<div class="sched-item fly-item"><div class="sched-item-info"><div class="sched-item-name">${flyLabel()}</div><div class="sched-item-meta">${tripConfig.camperNote}${driveStr}</div></div></div>`;
       }
       for(const a of acts){
         // Only show drive-eve toggle on the FIRST activity of the day (the zone-setting one) and only if there's transit
@@ -2650,8 +3591,8 @@ function renderDays(){
         const isExpanded = state.expandedActs.has(a.id);
         html+=`<div class="sched-item${isExpanded?' expanded':''}" data-expand-act="${a.id}" style="cursor:pointer">
           <div class="sched-item-info">
-            <div class="sched-item-name">${a.name}${a.multiDay?` <span class="tag tag-multiday" style="font-size:9px;padding:1px 5px">↕ day ${a.multiDayPart}/${a.multiDayTotal}</span>`:''} <span style="font-size:10px;opacity:0.4;margin-left:4px">${isExpanded?'▲':'▼'}</span></div>
-            <div class="sched-item-meta">${a.dist?`${a.dist}km · ${a.gain}m gain · `:''} ~${a.actHrs}h activity</div>
+            <div class="sched-item-name">${a.name}${a.multiDay?` <span class="tag tag-multiday" style="font-size:9px;padding:1px 5px">↕ day ${a.multiDayPart}/${a.multiDayTotal}</span>`:''}${a.book?` <span class="tag tag-book" style="font-size:9px;padding:1px 5px">${state.booked[a.id]?'booked ✓':'book'}</span>`:''} <span style="font-size:10px;opacity:0.4;margin-left:4px">${isExpanded?'▲':'▼'}</span></div>
+            <div class="sched-item-meta">${a.dist?`${a.dist}km · ${a.gain}m gain · `:''}${a.actHrs?` ~${a.actHrs}h activity`:(a.id==='ni-ferry'?'sailing + check-in counted as transit':'rest / easy day')}</div>
             ${hasTransit?`<button class="drive-eve-btn${eveOn?' active':''}" data-day="${day.id}" title="Float transit to previous evening">${eveOn?'🚗 Drive prev eve ✓':'🚗 Drive prev eve'}</button>`:''}
           </div>
           <button class="sched-remove" data-day="${day.id}" data-act="${a.id}" aria-label="Remove">×</button>
@@ -2673,7 +3614,7 @@ function renderDays(){
     const eveLbl = getEveningDriveLabel(i);
     if(hasActs || eveDrive > 0 || isFly){
       html+=`<div class="day-effort-row">
-        ${transit>0?`<div class="effort-chip drive">🚗 ${transit.toFixed(1)}h transit</div>`:''}
+        ${transit>0?`<div class="effort-chip drive">${dayCrossesStrait(i)?'⛴':'🚗'} ${transit.toFixed(1)}h transit${dayCrossesStrait(i)?' incl. ferry':''}</div>`:''}
         ${getLocalDrive(i)>0?`<div class="effort-chip drive">🚗 ${getLocalDrive(i).toFixed(1)}h local${(()=>{const sets=getDayWaypointSets(i);return sets.length&&sets.some(wp=>osrmCache[osrmKey(wp)]!=null)?' <span style=\"font-size:8px;opacity:0.6\">live</span>':''})()}</div>`:''}
         ${actH>0?`<div class="effort-chip hike">⛰ ${actH.toFixed(1)}h activity</div>`:''}
         ${gain>0?`<div class="effort-chip hike">↑${gain}m gain</div>`:''}
@@ -2699,7 +3640,7 @@ function renderDays(){
       } else if(campOptions.length === 1) {
         const c = campOptions[0];
         html+=`<div class="day-camp">${typeIcon[c.type]||'⛺'} <span>${c.name}</span>
-          <a href="${c.link}" target="_blank" rel="noopener" style="color:#70c8e0;font-family:var(--mono);font-size:9px;border:1px solid rgba(72,168,192,0.25);padding:1px 7px;border-radius:20px;text-decoration:none;margin-left:4px">book ↗</a>
+          ${c.link?`<a href="${c.link}" target="_blank" rel="noopener" style="color:#70c8e0;font-family:var(--mono);font-size:9px;border:1px solid rgba(72,168,192,0.25);padding:1px 7px;border-radius:20px;text-decoration:none;margin-left:4px">book ↗</a>`:''}
         </div>`;
       } else {
         html+=`<div class="day-camp" style="flex-direction:column;align-items:flex-start;gap:6px">
@@ -2711,7 +3652,7 @@ function renderDays(){
               border:1px solid ${ci===selIdx?'rgba(120,200,72,0.4)':'var(--border)'};
               color:${ci===selIdx?'var(--accent)':'var(--text3)'};
               display:inline-flex;align-items:center;gap:5px;
-            ">${typeIcon[c.type]||'⛺'} ${c.name}${ci===selIdx?' ✓':''}<a href="${c.link}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:#70c8e0;font-size:8px;text-decoration:none;opacity:0.8;margin-left:3px">↗</a></button>`).join('')}
+            ">${typeIcon[c.type]||'⛺'} ${c.name}${ci===selIdx?' ✓':''}${c.link?`<a href="${c.link}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:#70c8e0;font-size:8px;text-decoration:none;opacity:0.8;margin-left:3px">↗</a>`:''}</button>`).join('')}
           </div>
         </div>`;
       }
@@ -2858,7 +3799,7 @@ function renderDayEffort(dayIdx) {
   const effortRow = card.querySelector('.day-effort-row');
   if (!effortRow) return;
   effortRow.innerHTML = `
-    ${transit>0?`<div class="effort-chip drive">🚗 ${transit.toFixed(1)}h transit</div>`:''}
+    ${transit>0?`<div class="effort-chip drive">${dayCrossesStrait(i)?'⛴':'🚗'} ${transit.toFixed(1)}h transit${dayCrossesStrait(i)?' incl. ferry':''}</div>`:''}
     ${localDrive>0?`<div class="effort-chip drive">🚗 ${localDrive.toFixed(1)}h local <span style="font-size:8px;opacity:0.6">live</span></div>`:''}
     ${actH>0?`<div class="effort-chip hike">⛰ ${actH.toFixed(1)}h activity</div>`:''}
     ${gain>0?`<div class="effort-chip hike">↑${gain}m gain</div>`:''}
@@ -2867,11 +3808,16 @@ function renderDayEffort(dayIdx) {
   `;
 }
 
+function flyLabel(){
+  return `✈ Fly ${tripConfig.startAirport||'CHC'} → ${tripConfig.flightDest||'home'}${tripConfig.flightTime?` (${tripConfig.flightTime})`:''}`;
+}
+
 function renderAll(){
   renderProgressBar();
   renderTripSummary();
   renderFatigueChart();
   renderFatigueBanner();
+  renderBookCard();
   renderHeaderBadges();
   renderDays();
   renderSheet();
@@ -2925,6 +3871,10 @@ function renderSheet(){
     if(f==='rec'&&!a.rec) continue;
     if(f==='new'&&!a.isNew) continue;
     if(f==='easy'&&a.hard) continue;
+    if(f==='bike'&&!(a.types||[]).includes('bike')) continue;
+    if(f==='book'&&!a.book) continue;
+    if(f==='lotr'&&!a.lotr) continue;
+    if(state.islandFilter!=='all' && islandOf(a.zone||a.baseZone)!==state.islandFilter) continue;
     if(q&&!a.name.toLowerCase().includes(q)&&!(a.zone||'').toLowerCase().includes(q)) continue;
     const zone = a.zone || 'My Activities';
     if(!groups[zone]) groups[zone]=[];
@@ -2932,8 +3882,11 @@ function renderSheet(){
   }
 
   let html='';
+  let lastIsland=null;
   for(const [zone,acts] of Object.entries(groups).sort((a,b)=>zoneOrder(a[0])-zoneOrder(b[0]))){
     if(!acts.length) continue;
+    const isl = zone==='My Activities' ? null : islandOf(zone);
+    if(isl && isl!==lastIsland){ html+=`<div class="island-divider">${isl==='N'?'North Island':'South Island'}</div>`; lastIsland=isl; }
     html+=`<div class="zone-header-sheet">${zone}</div>`;
     for(const a of acts){
       const sched = state.sheetForDay ? isScheduledOnDay(a.id, state.sheetForDay) : isScheduled(a.id);
@@ -2945,6 +3898,8 @@ function renderSheet(){
           <div class="act-tags">
             ${(a.types||[]).map(typeTag).join('')}
             ${a.hard?'<span class="tag tag-hard">hard</span>':''}
+            ${a.book?'<span class="tag tag-book">book</span>':''}
+            ${a.lotr?'<span class="tag tag-lotr">LOTR</span>':''}
             ${a.multiDay?`<span class="tag tag-multiday">↕ day ${a.multiDayPart}/${a.multiDayTotal}</span>`:''}
             ${a.rec?'<span class="tag tag-rec">rec</span>':''}
             ${a.isNew?'<span class="tag tag-new">new</span>':''}
@@ -2959,6 +3914,7 @@ function renderSheet(){
         </div>
         <div class="act-row-note">
           ${a.notes?`<div style="margin-bottom:6px">${a.notes}</div>`:''}
+          ${a.book&&a.bookNote?`<div style="margin-bottom:6px;color:#e89070;font-family:var(--mono);font-size:10px">📌 Book: ${a.bookNote}</div>`:''}
           ${a.link?`<a href="${a.link}" target="_blank" rel="noopener" style="color:#70c8e0;font-size:10px">🔗 booking / info ↗</a>`:''}
           ${isCustom?`<div style="margin-top:6px"><button class="caf-btn cancel" style="flex:none;padding:3px 10px;font-size:9px" data-edit-custom="${a.id}">✏ edit</button> <button class="caf-btn delete" style="flex:none;padding:3px 10px;font-size:9px" data-del-custom="${a.id}">× delete</button></div>`:''}
           <div class="user-note-wrap">
@@ -2982,13 +3938,13 @@ function renderSheet(){
       <div class="caf-field">
         <div class="caf-label">Zone</div>
         <select class="caf-input" id="caf-zone">
-          ${['CHC','Castle Hill','Arthurs Pass','Peel Forest','Mackenzie','Mt Cook','Wanaka','Glenorchy','Queenstown','Te Anau','Milford','Bluff','Stewart Island','Dunedin','Haast','Franz Josef','Fox Glacier','Hokitika','Punakaiki','Marahau','Takaka','Nelson Lakes','Picton','Blenheim','Kaikoura','Hanmer'].map(z=>`<option value="${z}"${editing&&editing.zone===z?' selected':''}>${z}</option>`).join('')}
+          ${ZONE_ORDER.filter(z=>BASE_COORDS[z]).map(z=>`<option value="${z}"${editing&&editing.zone===z?' selected':''}>${z}</option>`).join('')}
         </select>
       </div>
       <div class="caf-field">
         <div class="caf-label">Type (tap to toggle)</div>
         <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:2px" id="caf-types">
-          ${['hike','climb','paddle','run','wildlife','scenic','soak'].map(t=>{
+          ${['hike','climb','paddle','run','bike','wildlife','scenic','soak'].map(t=>{
             const active = editing&&editing.types&&editing.types.includes(t);
             return `<button type="button" class="filter-chip${active?' active':''}" data-type="${t}" onclick="this.classList.toggle('active')">${t}</button>`;
           }).join('')}
@@ -3182,9 +4138,18 @@ document.getElementById('sheet-search').addEventListener('input',e=>{
   renderSheet();
 });
 
-document.querySelectorAll('.filter-chip').forEach(btn=>{
+document.querySelectorAll('.island-chip').forEach(btn=>{
   btn.addEventListener('click',()=>{
-    document.querySelectorAll('.filter-chip').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.island-chip').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    state.islandFilter=btn.dataset.island;
+    renderSheet();
+  });
+});
+
+document.querySelectorAll('.filter-chip[data-filter]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.filter-chip[data-filter]').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
     state.activeFilter=btn.dataset.filter;
     renderSheet();
@@ -3197,6 +4162,13 @@ document.querySelectorAll('.filter-chip').forEach(btn=>{
 const SB_URL = 'https://szcmxrqehkrbeolxwbng.supabase.co';
 const SB_PUB = 'sb_publishable_Q9yXwZ2ax8OLhSDdEuoM8A_QkbUTDYs';
 const SB_JWT = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6Y214cnFlaGtyYmVvbHh3Ym5nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4NzU0OTQsImV4cCI6MjA4ODQ1MTQ5NH0.HV6-1VANpOwvE-GK9GlsfNIU2Fs4Ibph0kXxTSLWoCk';
+
+// Separate keys from the March South Island plan so the two never overwrite each other
+const LS_CODE_KEY = 'nz-planner-v2-code';
+const LS_CONFIG_KEY = 'nz-planner-v2-configured';
+function lsGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+function lsSet(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+function lsDel(k){ try { localStorage.removeItem(k); } catch(e){} }
 
 const sync = {
   code: null,
@@ -3251,7 +4223,7 @@ async function createPlan() {
     sync.code = code;
     sync.lastSaved = JSON.stringify(planState);
     sync.initialised = true;
-    localStorage.setItem('nz-planner-code', code);
+    lsSet(LS_CODE_KEY, code);
     document.getElementById('created-code').textContent = code;
     document.getElementById('create-status').textContent = '✓ Plan created — share the code!';
     showModalState('created');
@@ -3284,7 +4256,7 @@ async function joinPlan() {
 
     const row = rows[0];
     sync.code = raw;
-    localStorage.setItem('nz-planner-code', raw);
+    lsSet(LS_CODE_KEY, raw);
 
     // Load their state
     loadRemoteState(row.state);
@@ -3305,7 +4277,7 @@ async function joinPlan() {
 function disconnectPlan() {
   sync.code = null;
   stopPolling();
-  localStorage.removeItem('nz-planner-code');
+  lsDel(LS_CODE_KEY);
   updateSyncPill('disconnected');
   showModalState('unconnected');
   closeSyncModal();
@@ -3392,6 +4364,7 @@ function getSerializableState() {
     expandedDays: [...state.expandedDays],
     customActivities: state.customActivities,
     userNotes: state.userNotes,
+    booked: state.booked,
   };
 }
 
@@ -3591,6 +4564,8 @@ function loadRemoteState(remoteState) {
   if (remoteState.expandedDays) state.expandedDays = new Set(remoteState.expandedDays);
   if (remoteState.customActivities) state.customActivities = remoteState.customActivities;
   if (remoteState.userNotes) state.userNotes = remoteState.userNotes;
+  if (remoteState.booked) state.booked = remoteState.booked;
+  updateTripTitle();
   renderAll();
 }
 
@@ -3667,7 +4642,7 @@ document.getElementById('modal-overlay').addEventListener('click', e => {
 
 // Auto-reconnect from localStorage
 (function autoReconnect() {
-  const saved = localStorage.getItem('nz-planner-code');
+  const saved = lsGet(LS_CODE_KEY);
   if (saved) {
     sync.code = saved;
     updateSyncPill('syncing');
@@ -3688,7 +4663,7 @@ document.getElementById('modal-overlay').addEventListener('click', e => {
           sync.code = null;
           sync.initialised = true; // unblocked, no remote to worry about
           stopPolling();
-          localStorage.removeItem('nz-planner-code');
+          lsDel(LS_CODE_KEY);
           updateSyncPill('disconnected');
         }
       })
@@ -3696,7 +4671,7 @@ document.getElementById('modal-overlay').addEventListener('click', e => {
         // Network error — unblock saves so local use still works
         sync.initialised = true;
         stopPolling();
-        localStorage.removeItem('nz-planner-code');
+        lsDel(LS_CODE_KEY);
         updateSyncPill('disconnected');
       });
   } else {
@@ -3735,6 +4710,8 @@ const ZONE_COORDS = {
   'Arthurs Pass':   [-42.947, 171.563],
   'Routeburn':      [-44.762, 168.131],
 };
+
+function zc(z) { return ZONE_COORDS[z] || BASE_COORDS[z]; }
 
 let mapInstance = null;
 let mapInitialised = false;
@@ -3778,8 +4755,8 @@ function initMap() {
 function createMap() {
   if (mapInitialised) return;
   mapInstance = L.map('trip-map', {
-    center: [-44.0, 170.5],
-    zoom: 6,
+    center: [-41.0, 173.5],
+    zoom: 5,
     zoomControl: true,
     attributionControl: false,
   });
@@ -3807,7 +4784,7 @@ function renderMap() {
     const acts = getDayActs(`day-${i}`);
     for (const a of acts) {
       const zone = a.baseZone;
-      if (zone && ZONE_COORDS[zone] && !seenZones.has(zone)) {
+      if (zone && zc(zone) && !seenZones.has(zone)) {
         seenZones.add(zone);
         orderedZones.push({ zone, actName: a.name, dayIdx: i });
       }
@@ -3822,9 +4799,9 @@ function renderMap() {
   }
   noActs.style.display = 'none';
 
-  // Draw route line
-  if (orderedZones.length > 1) {
-    const latlngs = orderedZones.map(z => ZONE_COORDS[z.zone]);
+  // Draw route line: start airport → planned zones in order → end airport
+  if (orderedZones.length >= 1) {
+    const latlngs = [zc(startZone()), ...orderedZones.map(z => zc(z.zone)), zc(endZone())].filter(Boolean);
     const line = L.polyline(latlngs, {
       color: '#78c848',
       weight: 2,
@@ -3834,24 +4811,17 @@ function renderMap() {
     mapLayers.push(line);
   }
 
-  // Add start (CHC) if not already in list
-  const hasChc = orderedZones.some(z => z.zone === 'CHC');
-  if (!hasChc) {
-    const chcIcon = L.divIcon({
-      className: '',
-      html: `<div style="width:10px;height:10px;border-radius:50%;background:#5a7a50;border:2px solid #9ab888;box-shadow:0 0 6px rgba(0,0,0,0.5)"></div>`,
-      iconSize: [10,10],
-      iconAnchor: [5,5],
-    });
-    const chcMarker = L.marker(ZONE_COORDS['CHC'], { icon: chcIcon })
-      .bindPopup('<div style="font-family:monospace;font-size:11px;color:#0d1a10"><strong>Christchurch</strong><br>Start / End</div>')
-      .addTo(mapInstance);
-    mapLayers.push(chcMarker);
-  }
+  // Start / end markers (arrival and departure airports)
+  [[startZone(), 'Start', '#48a8c0', tripConfig.arrivalAirport], [endZone(), 'End', '#d4b040', tripConfig.startAirport]].forEach(([zn, lbl, col, code]) => {
+    const c = zc(zn);
+    if (!c) return;
+    const ic = L.divIcon({ className:'', html:`<div style="width:12px;height:12px;border-radius:3px;background:${col};border:2px solid rgba(255,255,255,0.5);box-shadow:0 0 6px rgba(0,0,0,0.5)"></div>`, iconSize:[12,12], iconAnchor:[6,6] });
+    mapLayers.push(L.marker(c, { icon: ic }).bindPopup(`<div style="font-family:monospace;font-size:11px;color:#0d1a10"><strong>${zn}</strong><br>${lbl}${code?' · '+code:''}</div>`).addTo(mapInstance));
+  });
 
   // Draw markers for each planned zone
   orderedZones.forEach((z, idx) => {
-    const coord = ZONE_COORDS[z.zone];
+    const coord = zc(z.zone);
     const color = '#78c848';
     const size = 11;
 
@@ -3872,7 +4842,7 @@ function renderMap() {
   });
 
   // Fit bounds
-  const allCoords = orderedZones.map(z => ZONE_COORDS[z.zone]);
+  const allCoords = [zc(startZone()), ...orderedZones.map(z => zc(z.zone)), zc(endZone())].filter(Boolean);
   if (allCoords.length === 1) {
     mapInstance.setView(allCoords[0], 8);
   } else {
@@ -3883,6 +4853,7 @@ function renderMap() {
 // ═══════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════
+updateTripTitle();
 renderAll();
 // Auto-expand day 0
 state.expandedDays.add('day-0');
@@ -3955,6 +4926,9 @@ function showWizard() {
   // Pre-populate from current tripConfig
   document.getElementById('w-start-date').value = tripConfig.startDate;
   document.getElementById('w-num-days').value = tripConfig.numDays;
+  document.getElementById('w-arrival-airport').value = tripConfig.arrivalAirport || 'AKL';
+  document.getElementById('w-arrival-note').value = tripConfig.arrivalNote || '';
+  document.getElementById('w-ni-target').value = tripConfig.niTargetDays || 18;
   document.getElementById('w-start-airport').value = tripConfig.startAirport;
   document.getElementById('w-flight-dest').value = tripConfig.flightDest;
   document.getElementById('w-flight-time').value = tripConfig.flightTime;
@@ -4000,17 +4974,20 @@ function wizardFinish() {
   const startDate = document.getElementById('w-start-date').value;
   const numDays = parseInt(document.getElementById('w-num-days').value);
   const startAirport = document.getElementById('w-start-airport').value.toUpperCase().trim() || 'CHC';
-  const flightDest = document.getElementById('w-flight-dest').value.toUpperCase().trim() || 'MEL';
-  const flightTime = document.getElementById('w-flight-time').value || '15:45';
+  const flightDest = document.getElementById('w-flight-dest').value.toUpperCase().trim();
+  const flightTime = document.getElementById('w-flight-time').value || '';
   const camperNote = document.getElementById('w-camper-note').value.trim();
+  const arrivalAirport = document.getElementById('w-arrival-airport').value.toUpperCase().trim() || 'AKL';
+  const arrivalNote = document.getElementById('w-arrival-note').value.trim();
+  const niTargetDays = parseInt(document.getElementById('w-ni-target').value) || 18;
   const newScheduled = { ...state.scheduled };
   // Apply
   const selfContained = (document.getElementById('w-self-contained')?.checked) || false;
-  tripConfig = { startDate, numDays, startAirport, flightDest, flightTime, camperNote, lockedDays: {}, tripName: 'NZ South Island', selfContained };
+  tripConfig = { ...tripConfig, startDate, numDays, arrivalAirport, arrivalNote, niTargetDays, startAirport, flightDest, flightTime, camperNote, lockedDays: {}, tripName: tripConfig.tripName || 'NZ North + South', selfContained };
   state.scheduled = newScheduled;
   buildDays();
   updateTripTitle();
-  localStorage.setItem('nz-planner-configured', '1');
+  lsSet(LS_CONFIG_KEY, '1');
   hideWizard();
   renderAll();
   if(typeof debouncedSave === 'function') debouncedSave();
@@ -4023,7 +5000,9 @@ function updateTripTitle() {
   const d = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
   const mon = monN[d.getMonth()];
   const yr = parts[0];
-  el.innerHTML = `NZ <em>South Island</em> Planner`;
+  const a = islandOf(startZone()), b = islandOf(endZone());
+  const label = a !== b ? (a === 'N' ? 'North → South' : 'South → North') : (a === 'N' ? 'North Island' : 'South Island');
+  el.innerHTML = `NZ <em>${label}</em> Planner`;
 }
 
 // Add settings gear button to header
@@ -4042,7 +5021,7 @@ function addSettingsButton() {
 // ── STARTUP ──
 // Check if this is a fresh load (no saved code, no config in URL)
 function checkFirstRun() {
-  const hasConfig = localStorage.getItem('nz-planner-configured');
+  const hasConfig = lsGet(LS_CONFIG_KEY);
   // Show wizard if trip has never been configured — regardless of sync code
   if(!hasConfig) {
     showWizard();
@@ -4053,7 +5032,7 @@ function checkFirstRun() {
 <!-- ── SETUP WIZARD ── -->
 <div class="wizard-overlay" id="setup-wizard" style="display:none">
   <div class="wizard-inner">
-    <div class="wizard-logo">NZ <em>South Island</em> Planner</div>
+    <div class="wizard-logo">NZ <em>North → South</em> Planner</div>
     <div class="wizard-sub">Trip configurator</div>
     <div class="wizard-progress" id="wizard-progress"></div>
 
@@ -4062,12 +5041,26 @@ function checkFirstRun() {
       <div class="wizard-step-title">Step 1 — Your trip dates</div>
       <div class="wizard-field">
         <div class="wizard-label">Start date (arrival in NZ)</div>
-        <input class="wizard-input" type="date" id="w-start-date" value="2026-03-16">
+        <input class="wizard-input" type="date" id="w-start-date" value="2026-12-18">
       </div>
       <div class="wizard-field">
         <div class="wizard-label">Number of days</div>
-        <input class="wizard-input" type="number" id="w-num-days" value="20" min="5" max="60">
-        <div class="wizard-hint">Include your flight home day as the last day.</div>
+        <input class="wizard-input" type="number" id="w-num-days" value="44" min="5" max="90">
+        <div class="wizard-hint">Include your flight home day as the last day. 18 Dec → 30 Jan = 44 days.</div>
+      </div>
+      <div class="wizard-field wizard-input-row">
+        <div>
+          <div class="wizard-label">Arrival airport</div>
+          <input class="wizard-input" type="text" id="w-arrival-airport" value="AKL" placeholder="AKL" maxlength="4" style="text-transform:uppercase">
+        </div>
+        <div>
+          <div class="wizard-label">North Island target (days)</div>
+          <input class="wizard-input" type="number" id="w-ni-target" value="18" min="0" max="90">
+        </div>
+      </div>
+      <div class="wizard-field">
+        <div class="wizard-label">Arrival note (optional)</div>
+        <input class="wizard-input" type="text" id="w-arrival-note" value="Arrive Auckland — pick up campervan" placeholder="e.g. Pick up camper at 2pm">
       </div>
       <div class="wizard-nav">
         <button class="wizard-btn wizard-btn-primary" onclick="wizardNext(1)">Next →</button>
@@ -4085,16 +5078,16 @@ function checkFirstRun() {
       <div class="wizard-field wizard-input-row">
         <div>
           <div class="wizard-label">Destination</div>
-          <input class="wizard-input" type="text" id="w-flight-dest" value="MEL" placeholder="MEL" maxlength="4" style="text-transform:uppercase">
+          <input class="wizard-input" type="text" id="w-flight-dest" value="" placeholder="e.g. SIN" maxlength="4" style="text-transform:uppercase">
         </div>
         <div>
           <div class="wizard-label">Departure time</div>
-          <input class="wizard-input" type="time" id="w-flight-time" value="15:45">
+          <input class="wizard-input" type="time" id="w-flight-time" value="">
         </div>
       </div>
       <div class="wizard-field">
         <div class="wizard-label">Campervan note (optional)</div>
-        <input class="wizard-input" type="text" id="w-camper-note" value="Return Jucy camper in morning" placeholder="e.g. Return camper by 9am">
+        <input class="wizard-input" type="text" id="w-camper-note" value="Return campervan in Christchurch" placeholder="e.g. Return camper by 9am">
       </div>
       <div class="wizard-field" style="display:flex;align-items:center;gap:10px;padding:10px 0">
         <input type="checkbox" id="w-self-contained" style="width:18px;height:18px;accent-color:var(--accent);flex-shrink:0">
